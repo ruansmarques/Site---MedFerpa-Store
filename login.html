@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Login | Insider - MedFerpa Store</title>
+    
+    <!-- Estilos -->
     <link rel="stylesheet" href="styles/login.css">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <!-- Script de Login Google -->
+    
+    <!-- Script Oficial Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -19,16 +23,16 @@
             </div>
 
             <div class="login-body">
-                <h1>Fazer login</h1>
-                <p class="subtitle">Faça login ou crie uma conta</p>
+                <h1 id="auth-title">Fazer login</h1>
+                <p class="subtitle" id="auth-subtitle">Faça login ou crie uma conta</p>
 
                 <!-- Botões Sociais -->
                 <div class="social-auth">
-                    <!-- O container do Google deve ser direto, sem <button> em volta -->
+                    <!-- Container do Botão Oficial do Google -->
                     <div id="google-btn-container"></div>
                     
-                    <!-- O Facebook continua como botão manual -->
-                    <button class="btn-social" onclick="alert('Login pelo Facebook em desenvolvimento')">
+                    <!-- Botão manual para o Facebook -->
+                    <button class="btn-social" type="button" onclick="alert('Login via Facebook em breve!')">
                         <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook">
                     </button>
                 </div>
@@ -37,12 +41,21 @@
                     <span>ou</span>
                 </div>
 
-                <!-- Formulário de E-mail -->
-                <div class="form-group">
-                    <input type="email" id="user-email" placeholder="E-mail" class="input-field">
-                </div>
+                <!-- Formulário de Autenticação (E-mail e Senha) -->
+                <form id="auth-form">
+                    <div class="form-group">
+                        <input type="email" id="user-email" placeholder="E-mail" class="input-field" required>
+                        <input type="password" id="user-password" placeholder="Sua Senha" class="input-field" required minlength="6">
+                    </div>
 
-                <button class="btn-continue" id="btn-login-continue">Continuar</button>
+                    <button type="submit" class="btn-continue" id="btn-auth-main">Continuar</button>
+                    
+                    <!-- Alternar entre Login e Cadastro -->
+                    <p class="toggle-auth-text" style="margin-top: 25px; font-size: 13px; color: #666;">
+                        <span id="auth-switch-label">Não tem uma conta?</span> 
+                        <span id="switch-to-signup" style="font-weight: 800; text-decoration: underline; cursor: pointer; color: #000;">Cadastre-se aqui</span>
+                    </p>
+                </form>
             </div>
         </div>
 
@@ -65,6 +78,7 @@
         </div>
     </div>
 
-    <script src="scripts/auth.js"></script>
+    <!-- Script de Autenticação como Módulo (Necessário para Firebase) -->
+    <script type="module" src="scripts/auth.js"></script>
 </body>
 </html>
