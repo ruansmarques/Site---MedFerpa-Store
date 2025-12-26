@@ -24,10 +24,11 @@
 
                 <!-- Botões Sociais -->
                 <div class="social-auth">
-                    <button class="btn-social">
-                        <div id="google-btn-container"></div>
-                    </button>
-                    <button class="btn-social">
+                    <!-- O container do Google deve ser direto, sem <button> em volta -->
+                    <div id="google-btn-container"></div>
+                    
+                    <!-- O Facebook continua como botão manual -->
+                    <button class="btn-social" onclick="alert('Login pelo Facebook em desenvolvimento')">
                         <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook">
                     </button>
                 </div>
