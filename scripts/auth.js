@@ -110,15 +110,23 @@ function initEvents() {
     document.getElementById('close-modal')?.addEventListener('click', closeModal);
 }
 
-// --- MONITOR DE ESTADO ---
 onAuthStateChanged(auth, (user) => {
-    if (user && window.location.pathname.includes('dashboard.html')) {
-        const nameEl = document.getElementById('dash-user-name');
-        if(nameEl) nameEl.innerText = user.displayName || user.email.split('@')[0];
-    }
-    // Proteção de rota
-    if (!user && window.location.pathname.includes('dashboard.html')) {
-        window.location.href = "login.html";
+    const userIcon = document.getElementById('user-icon-header');
+    const userLink = document.getElementById('user-link-header');
+    
+    if (user) {
+        if (userLink) userLink.href = "dashboard.html";
+        if (userIcon) {
+            userIcon.src = user.photoURL || "assets/icon-user.svg";
+            userIcon.style.borderRadius = "50%";
+            userIcon.style.border = "2px solid #000";
+        }
+    } else {
+        if (userLink) userLink.href = "login.html";
+        if (userIcon) {
+            userIcon.src = "assets/icon-user.svg";
+            userIcon.style.border = "none";
+        }
     }
 });
 
