@@ -3,21 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
-    <title>Login | Insider - MedFerpa Store</title>
-    
+    <title>Login | MedFerpa Store</title>
     <link rel="stylesheet" href="styles/login.css">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Script Google Identity -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
     <main class="login-wrapper">
         <div class="login-card">
             <div class="login-header">
-                <img src="assets/logo.svg" alt="Logo Insider" class="login-logo">
+                <img src="assets/logo.svg" alt="Logo MedFerpa" class="login-logo">
             </div>
 
             <div class="login-body">
@@ -25,11 +20,13 @@
                 <p class="subtitle" id="auth-subtitle">Faça login ou crie uma conta</p>
 
                 <div class="social-auth">
-                    <!-- Botão Google -->
-                    <div id="google-btn-container" style="min-height: 44px;"></div>
+                    <!-- BOTÕES SOCIAIS CUSTOMIZADOS -->
+                    <button class="btn-social" type="button" id="btn-google-login">
+                        <img src="assets/icon-google.svg" alt="Google">
+                    </button>
                     
-                    <button class="btn-social" type="button" id="btn-fb-soon">
-                        <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook">
+                    <button class="btn-social" type="button" id="btn-fb-login">
+                        <img src="assets/icon-facebook.svg" alt="Facebook">
                     </button>
                 </div>
 
@@ -37,14 +34,13 @@
                     <span>ou</span>
                 </div>
 
-                <!-- FORMULÁRIO -->
                 <form id="auth-form" novalidate>
                     <div class="form-group">
                         <input type="email" id="user-email" placeholder="E-mail" class="input-field" required>
                         <input type="password" id="user-password" placeholder="Sua Senha" class="input-field" required minlength="6">
                     </div>
 
-                    <button type="submit" class="btn-continue" id="btn-auth-main">Continuar</button>
+                    <button type="submit" class="btn-continue" id="btn-auth-main">Entrar</button>
                     
                     <p class="toggle-auth-text" style="margin-top: 25px; font-size: 13px; color: #666;">
                         <span id="auth-switch-label">Não tem uma conta?</span> 
@@ -60,7 +56,6 @@
         </footer>
     </main>
 
-    <!-- MODAL POLÍTICAS -->
     <div id="policy-modal" class="modal-overlay">
         <div class="modal-content">
             <div id="modal-text" class="modal-text-body"></div>
@@ -70,7 +65,6 @@
         </div>
     </div>
 
-    <!-- SCRIPT PRINCIPAL -->
     <script type="module" src="scripts/auth.js"></script>
 </body>
 </html>
