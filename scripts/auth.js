@@ -20,14 +20,16 @@ const firebaseConfig = {
     measurementId: "G-YSPZM27EEK"
 };
 
-// Inicialização
+// Inicialização do Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 // --- ESTADO DO FORMULÁRIO (LOGIN / CADASTRO) ---
 let isLoginMode = true;
 
-// Função para alternar entre Login e Cadastro
+/**
+ * Alterna a interface entre modo de Login e modo de Cadastro
+ */
 window.toggleAuthMode = () => {
     isLoginMode = !isLoginMode;
     const title = document.getElementById('auth-title');
@@ -54,27 +56,36 @@ if (authForm) {
         const pass = document.getElementById('user-password').value;
         const btn = document.getElementById('btn-auth-main');
 
+        // Feedback visual de carregamento
         btn.disabled = true;
         btn.innerText = "Processando...";
 
         try {
             if (isLoginMode) {
+                // Tenta realizar login
                 await signInWithEmailAndPassword(auth, email, pass);
             } else {
+                // Tenta criar nova conta
                 await createUserWithEmailAndPassword(auth, email, pass);
-                alert("Conta criada com sucesso!");
+                alert("Conta criada com sucesso! Redirecionando...");
             }
+            // Sucesso: redireciona para o Dashboard
             window.location.href = "dashboard.html";
         } catch (error) {
             console.error("Erro Auth:", error.code);
             alert("Erro: " + traduzirErroFirebase(error.code));
+            
+            // Restaura o botão em caso de erro
             btn.disabled = false;
             btn.innerText = isLoginMode ? "Entrar" : "Cadastrar Agora";
         }
     });
 }
 
-// --- LOGIN GOOGLE ---
+// --- LOGIN COM GOOGLE ---
+/**
+ * Callback chamado pelo SDK do Google após o usuário selecionar a conta
+ */
 window.handleCredentialResponse = async (response) => {
     const credential = GoogleAuthProvider.credential(response.credential);
     try {
@@ -82,34 +93,57 @@ window.handleCredentialResponse = async (response) => {
         window.location.href = "dashboard.html";
     } catch (error) {
         console.error("Erro Google Auth:", error);
-        alert("Falha no login com Google.");
+        alert("Falha na autenticação com o Google. Verifique se o provedor está ativo no console do Firebase.");
     }
 };
 
-// --- LOGOUT ---
-window.logoutUser = () => {
-    signOut(auth).then(() => {
-        window.location.href = "login.html";
-    }).catch((error) => {
-        console.error("Erro ao sair:", error);
-    });
-};
+/**
+ * Função para renderizar o botão oficial do Google (Google Identity Services)
+ */
+function renderGoogleButton() {
+    const container = document.getElementById("google-btn-container");
+    // Verifica se o container existe e se a biblioteca do Google carregou corretamente
+    if (container && window.google) {
+        google.accounts.id.initialize({
+            client_id: "101312245182-00p0aknfafhhf3j5733qr7106tvefcep.apps.googleusercontent.com",
+            callback: window.handleCredentialResponse
+        });
+        google.accounts.id.renderButton(
+            container,
+            { 
+                theme: "outline", 
+                size: "large", 
+                width: container.offsetWidth > 0 ? container.offsetWidth : 200 
+            }
+        );
+    }
+}
 
-// --- MONITOR DE SESSÃO (CORAÇÃO DO PROJETO) ---
+// --- MONITOR DE SESSÃO (OBSERVER) ---
+/**
+ * Monitora se o usuário está logado ou não e atualiza a interface globalmente
+ */
 onAuthStateChanged(auth, (user) => {
+    // Ícone de usuário presente no header de todas as páginas
     const userIcon = document.querySelector('img[alt="Conta"]');
     
     if (user) {
-        // Usuário está logado
+        // --- USUÁRIO LOGADO ---
         if (userIcon) {
+            // Atualiza o ícone para a foto do Google ou ícone padrão com borda
             userIcon.src = user.photoURL || "assets/icon-user.svg";
             userIcon.style.borderRadius = "50%";
             userIcon.style.border = "2px solid #000";
-            userIcon.title = `Logado como: ${user.email}`;
-            userIcon.onclick = () => window.location.href = "dashboard.html";
+            userIcon.style.padding = "2px";
+            userIcon.title = `Minha Conta (${user.email})`;
+            // Muda o destino do clique para o Dashboard
+            userIcon.onclick = (e) => {
+                e.preventDefault();
+                window.location.href = "dashboard.html";
+            };
         }
 
-        // Se estiver no Dashboard, preenche os campos
+        // Se o usuário estiver na página dashboard.html, preenche as informações
         if (window.location.pathname.includes('dashboard.html')) {
             const dashName = document.getElementById('dash-user-name');
             const infoName = document.getElementById('info-name');
@@ -122,59 +156,78 @@ onAuthStateChanged(auth, (user) => {
             if (dashImg && user.photoURL) dashImg.src = user.photoURL;
         }
     } else {
-        // Usuário deslogado
+        // --- USUÁRIO DESLOGADO ---
         if (userIcon) {
             userIcon.src = "assets/icon-user.svg";
             userIcon.style.border = "none";
-            userIcon.onclick = () => window.location.href = "login.html";
+            userIcon.style.padding = "0";
+            userIcon.onclick = (e) => {
+                e.preventDefault();
+                window.location.href = "login.html";
+            };
         }
 
-        // Proteção de rota: se tentar acessar dashboard sem login
+        // Proteção de Rota: Se estiver no dashboard sem login, expulsa para o login
         if (window.location.pathname.includes('dashboard.html')) {
             window.location.href = "login.html";
         }
     }
 });
 
-// Auxiliar: Tradução de erros básicos
+// --- LOGOUT ---
+window.logoutUser = () => {
+    signOut(auth).then(() => {
+        window.location.href = "login.html";
+    }).catch((error) => {
+        console.error("Erro ao deslogar:", error);
+    });
+};
+
+// Vincula o botão de logout do dashboard se ele existir
+const btnLogout = document.getElementById('btn-logout');
+if (btnLogout) {
+    btnLogout.addEventListener('click', window.logoutUser);
+}
+
+// --- AUXILIARES E MODAIS ---
+
 function traduzirErroFirebase(code) {
     switch (code) {
         case 'auth/wrong-password': return 'Senha incorreta.';
-        case 'auth/user-not-found': return 'Usuário não encontrado.';
-        case 'auth/email-already-in-use': return 'Este e-mail já está em uso.';
+        case 'auth/user-not-found': return 'E-mail não cadastrado.';
+        case 'auth/email-already-in-use': return 'Este e-mail já está sendo usado por outra conta.';
         case 'auth/weak-password': return 'A senha deve ter no mínimo 6 caracteres.';
-        case 'auth/invalid-email': return 'E-mail inválido.';
-        default: return 'Ocorreu um erro inesperado.';
+        case 'auth/invalid-email': return 'O formato do e-mail é inválido.';
+        case 'auth/operation-not-allowed': return 'O método de login por e-mail não está ativado no Firebase.';
+        case 'auth/popup-closed-by-user': return 'A janela de login foi fechada antes de completar.';
+        default: return 'Ocorreu um erro de autenticação. Tente novamente.';
     }
 }
 
-// Inicializa o botão do Google apenas se estiver na página de login
-window.initGoogleAuth = () => {
-    if (document.getElementById("google-btn-container")) {
-        google.accounts.id.initialize({
-            client_id: "101312245182-00p0aknfafhhf3j5733qr7106tvefcep.apps.googleusercontent.com",
-            callback: window.handleCredentialResponse
-        });
-        google.accounts.id.renderButton(
-            document.getElementById("google-btn-container"),
-            { theme: "outline", size: "large", width: "185" }
-        );
+window.openModal = (type) => {
+    const modalData = {
+        privacy: `<h2>Política de Privacidade</h2><p>Na MedFerpa Store, levamos a sério sua privacidade. Seus dados de navegação e compra são protegidos por criptografia SSL e não são compartilhados com terceiros.</p>`,
+        terms: `<h2>Termos de Serviço</h2><p>Ao realizar o cadastro, você concorda com nossos termos de entrega tecnológica. Nossas peças são enviadas em embalagens sustentáveis com rastreamento em tempo real.</p>`
+    };
+    const modalText = document.getElementById('modal-text');
+    const modalOverlay = document.getElementById('policy-modal');
+    
+    if (modalText && modalOverlay) {
+        modalText.innerHTML = modalData[type] || 'Conteúdo não encontrado.';
+        modalOverlay.style.display = 'flex';
     }
 };
 
-// Modais de Política
-window.openModal = (type) => {
-    const modalData = {
-        privacy: `<h2>Política de Privacidade</h2><p>Seus dados estão seguros na MedFerpa Store. Utilizamos criptografia de ponta a ponta.</p>`,
-        terms: `<h2>Termos de Serviço</h2><p>Ao utilizar nossa loja, você concorda com os termos de uso e entrega tecnológica.</p>`
-    };
-    document.getElementById('modal-text').innerHTML = modalData[type];
-    document.getElementById('policy-modal').style.display = 'flex';
-};
-
 window.closeModal = () => {
-    document.getElementById('policy-modal').style.display = 'none';
+    const modalOverlay = document.getElementById('policy-modal');
+    if (modalOverlay) modalOverlay.style.display = 'none';
 };
 
-// Gatilho de inicialização
-window.addEventListener('load', window.initGoogleAuth);
+// --- INICIALIZAÇÃO ---
+
+// Tenta renderizar o botão do Google assim que o script carregar ou o DOM estiver pronto
+if (document.readyState === 'complete') {
+    renderGoogleButton();
+} else {
+    window.addEventListener('load', renderGoogleButton);
+}
