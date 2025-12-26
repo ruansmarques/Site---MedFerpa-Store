@@ -67,16 +67,18 @@ body {
     text-align: left;
 }
 
-/* 5. BOTÕES SOCIAIS */
+/* 5. BOTÕES SOCIAIS (GOOGLE E FACEBOOK LADO A LADO) */
 .social-auth {
     display: flex;
-    gap: 12px;
+    justify-content: center; /* Centraliza os botões */
+    gap: 16px;              /* Espaço entre eles */
     margin-bottom: 32px;
 }
 
+/* Container do Google e Botão do Facebook como quadrados iguais */
 #google-btn-container, .btn-social {
-    flex: 1;
-    height: 48px;
+    flex: 0 0 56px;         /* Define largura fixa de 56px (não estica) */
+    height: 56px;           /* Altura igual à largura para ser quadrado */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -85,11 +87,18 @@ body {
     background: #ffffff;
     cursor: pointer;
     transition: all 0.2s ease;
+    padding: 0;             /* Remove paddings internos */
+    overflow: hidden;       /* Garante que o iframe do Google não escape */
+}
+
+/* Remove a borda padrão do container do Google para não duplicar com a nossa */
+#google-btn-container {
+    border: none; 
 }
 
 .btn-social:hover {
     background-color: #fafafa;
-    border-color: #cccccc;
+    border-color: #000;
 }
 
 .btn-social img {

@@ -129,7 +129,14 @@ function renderGoogleButton() {
             client_id: "101312245182-00p0aknfafhhf3j5733qr7106tvefcep.apps.googleusercontent.com",
             callback: window.handleCredentialResponse
         });
-        google.accounts.id.renderButton(container, { theme: "outline", size: "large", width: 250 });
+
+        // ALTERAÇÃO AQUI: Mudamos o 'type' para 'icon'
+        google.accounts.id.renderButton(container, { 
+            type: "icon",          // Exibe apenas o ícone
+            theme: "outline",      // Mantém a borda clara
+            size: "large",         // Tamanho grande para alinhar com o Facebook
+            shape: "square",       // Formato quadrado para combinar com o design
+        });
     }
 }
 
