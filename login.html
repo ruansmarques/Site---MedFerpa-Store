@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Insider - MedFerpa Store</title>
+    <link rel="stylesheet" href="styles/login.css">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Script de Login Google -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+    <main class="login-wrapper">
+        <div class="login-card">
+            <!-- Logo centralizada -->
+            <div class="login-header">
+                <img src="assets/logo.svg" alt="Logo Insider" class="login-logo">
+            </div>
+
+            <div class="login-body">
+                <h1>Fazer login</h1>
+                <p class="subtitle">Faça login ou crie uma conta</p>
+
+                <!-- Botões Sociais -->
+                <div class="social-auth">
+                    <div id="google-btn-container"></div>
+                    <button class="btn-social">
+                        <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook">
+                    </button>
+                </div>
+
+                <div class="divider">
+                    <span>ou</span>
+                </div>
+
+                <!-- Formulário de E-mail -->
+                <div class="form-group">
+                    <input type="email" id="user-email" placeholder="E-mail" class="input-field">
+                </div>
+
+                <button class="btn-continue" id="btn-login-continue">Continuar</button>
+            </div>
+        </div>
+
+        <!-- Links de rodapé -->
+        <footer class="login-footer">
+            <a href="javascript:void(0)" onclick="openModal('privacy')">Política de privacidade</a>
+            <a href="javascript:void(0)" onclick="openModal('terms')">Termos de serviço</a>
+        </footer>
+    </main>
+
+    <!-- POPUP (MODAL) PARA POLÍTICAS -->
+    <div id="policy-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modal-text" class="modal-text-body">
+                <!-- Conteúdo dinâmico via JS -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn-modal-close" onclick="closeModal()">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/auth.js"></script>
+</body>
+</html>
