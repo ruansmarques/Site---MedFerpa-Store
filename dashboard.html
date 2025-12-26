@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Conta | MedFerpa Store</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-grid">
+            <div class="header-logo"><img src="assets/logo.svg" alt="Logo" onclick="window.location.href='index.html'" style="cursor:pointer"></div>
+            <div class="header-icons"><button id="btn-logout" class="btn-logout">Sair da Conta</button></div>
+        </div>
+    </header>
+
+    <main class="container dashboard-layout">
+        <aside class="dashboard-sidebar">
+            <div class="user-info-side">
+                <img src="assets/icon-user.svg" id="dash-user-img">
+                <h2 id="dash-user-name">Carregando...</h2>
+            </div>
+            <nav class="dash-nav">
+                <button class="dash-btn active" onclick="switchDash('profile')">Meu perfil</button>
+                <button class="dash-btn" onclick="switchDash('orders')">Meus pedidos</button>
+                <button class="dash-btn" onclick="switchDash('address')">Meu endereço</button>
+                <button class="dash-btn" onclick="switchDash('support')">Suporte</button>
+            </nav>
+        </aside>
+
+        <section class="dashboard-main-content">
+            <div id="section-profile" class="content-section active">
+                <h3>Dados do Perfil</h3>
+                <div class="data-card">
+                    <p><strong>Nome:</strong> <span id="info-name">...</span></p>
+                    <p><strong>E-mail:</strong> <span id="info-email">...</span></p>
+                </div>
+            </div>
+            <div id="section-orders" class="content-section">
+                <h3>Meus Pedidos</h3>
+                <p>Nenhum pedido realizado até o momento.</p>
+            </div>
+            <div id="section-address" class="content-section">
+                <h3>Endereços Salvos</h3>
+                <p>Você não possui endereços cadastrados.</p>
+            </div>
+            <div id="section-support" class="content-section">
+                <h3>Canal de Suporte</h3>
+                <p>Dúvidas? Entre em contato pelo e-mail: suporte@medferpa.com</p>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="scripts/auth.js"></script>
+    <script>
+        function switchDash(id) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.dash-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('section-' + id).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
