@@ -375,36 +375,47 @@ function initFAQ() {
 /* =========================================
    7. RECONHECIMENTO DE USUÁRIO LOGADO
    ========================================= */
-function checkUserLogin() {
-    const userData = localStorage.getItem('user_logged');
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+// Use as mesmas chaves que você colocou no auth.js
+const firebaseConfig = {
+    apiKey: "SUA_API_KEY",
+    authDomain: "SEU_PROJETO.firebaseapp.com",
+    projectId: "SEU_PROJETO",
+    storageBucket: "SEU_PROJETO.appspot.com",
+    messagingSenderId: "---",
+    appId: "---"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+function initUserIdentification() {
     const userIcon = document.querySelector('img[alt="Conta"]');
+    if (!userIcon) return;
 
-    if (userData && userIcon) {
-        const user = JSON.parse(userData);
-        
-        // Substitui o ícone de 'bonequinho' pela foto do usuário do Google
-        userIcon.src = user.picture;
-        userIcon.style.borderRadius = "50%";
-        userIcon.style.border = "2px solid #000";
-        userIcon.title = `Logado como: ${user.name} (Clique para sair)`;
-
-        // Adiciona evento para deslogar
-        userIcon.onclick = () => {
-            if(confirm("Deseja encerrar a sessão?")) {
-                localStorage.removeItem('user_logged');
-                window.location.reload();
-            }
-        };
-    } else if (userIcon) {
-        // Se não estiver logado, o ícone leva para a página de login
-        userIcon.onclick = () => {
-            window.location.href = "login.html";
-        };
-    }
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // USUÁRIO LOGADO
+            userIcon.src = user.photoURL || "assets/icon-user.svg";
+            userIcon.style.borderRadius = "50%";
+            userIcon.style.border = "2px solid #000";
+            userIcon.title = `Minha Conta (${user.email})`;
+            
+            // Clique leva para o Dashboard
+            userIcon.onclick = () => window.location.href = "dashboard.html";
+        } else {
+            // USUÁRIO DESLOGADO
+            userIcon.src = "assets/icon-user.svg";
+            userIcon.style.border = "none";
+            userIcon.onclick = () => window.location.href = "login.html";
+        }
+    });
 }
 
-// Chame a função dentro do DOMContentLoaded existente no seu main.js
+// Chame no seu DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
-    // ... seus inits anteriores ...
-    checkUserLogin(); 
+    // ... seus outros inits ...
+    initUserIdentification();
 });

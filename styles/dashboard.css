@@ -1,0 +1,58 @@
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+    margin-top: 50px;
+}
+
+.dashboard-menu {
+    background: #f9f9f9;
+    padding: 30px;
+    border-radius: 8px;
+    height: fit-content;
+}
+
+.user-welcome {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 20px;
+}
+
+.user-welcome img { width: 60px; margin-bottom: 10px; }
+
+.menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 15px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.menu-item.active { background: #000; color: #fff; }
+
+.dash-section { display: none; }
+.dash-section.active { display: block; }
+
+.info-card {
+    background: #fff;
+    border: 1px solid #eee;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+}
+
+.btn-logout {
+    background: #ff4444;
+    color: #fff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 700;
+}
