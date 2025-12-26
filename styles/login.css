@@ -36,28 +36,28 @@ body {
 }
 
 .btn-social {
-    flex: 0 0 52px; /* Largura fixa */
-    height: 52px;   /* Altura igual à largura */
+    flex: 0 0 52px;
+    height: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #ffffff;
+    background-color: #ffffff; /* Fundo branco para destacar as cores do ícone */
     border: 1px solid #e2e2e2;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    padding: 0;
+    transition: border-color 0.2s;
 }
 
 .btn-social:hover {
-    border-color: #000;
-    background-color: #fafafa;
+    border-color: #000000;
 }
 
 .btn-social img {
     width: 22px;
     height: 22px;
     display: block;
+    filter: none !important;
+    object-fit: contain;
 }
 
 .divider { position: relative; text-align: center; margin-bottom: 32px; }
