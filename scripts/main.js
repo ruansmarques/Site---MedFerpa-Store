@@ -1,31 +1,29 @@
+/* =========================================
+   SISTEMA DE VITRINE E CARRINHO - MEDFERPA
+   ========================================= */
+
 let cart = [];
 let currentSlide = 0;
 let slideTimer;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Inicializa a vitrine com todos os produtos originais
+    // Inicialização da interface
     renderProducts(productsData);
     initFAQ();
     initHeroSlider();
     initFilters();
 
-    // Listener para o seletor de Ordenação
+    // Listener para ordenação
     const sortSelect = document.getElementById('sort-products');
     if (sortSelect) {
         sortSelect.addEventListener('change', applyFilters);
     }
 });
 
-/* =========================================
-   1. LÓGICA DO BANNER PRINCIPAL (HERO)
-   ========================================= */
+/* --- SLIDER PRINCIPAL (HERO) --- */
 function initHeroSlider() {
-    startSlideTimer();
-}
-
-function startSlideTimer() {
     clearInterval(slideTimer);
-    slideTimer = setInterval(() => changeSlide(currentSlide + 1), 10000);
+    slideTimer = setInterval(() => changeSlide(currentSlide + 1), 7000);
 }
 
 function changeSlide(index) {
@@ -42,42 +40,37 @@ function changeSlide(index) {
     dots[currentSlide].classList.add('active');
 }
 
-function goToSlide(index) {
+window.goToSlide = (index) => {
     changeSlide(index);
-    startSlideTimer();
-}
+    initHeroSlider(); // Reseta o timer
+};
 
-/* =========================================
-   2. RENDERIZAÇÃO DA VITRINE
-   ========================================= */
+/* --- RENDERIZAÇÃO DE PRODUTOS --- */
 function renderProducts(dataToRender) {
     const container = document.getElementById('products-list');
     if (!container) return;
 
     if (dataToRender.length === 0) {
-        container.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 80px 20px;">
-                <h3 style="font-size: 18px; color: #666;">Nenhum produto encontrado com estes filtros.</h3>
-                <p style="font-size: 14px; color: #999; margin-top: 10px;">Tente ajustar suas preferências ou limpar os filtros.</p>
-            </div>
-        `;
+        container.innerHTML = `<div class="no-results">Nenhum produto encontrado.</div>`;
         return;
     }
 
     container.innerHTML = dataToRender.map(product => {
         const firstColor = product.colors[0];
+        const firstSize = product.sizes[0];
+        
         return `
             <article class="product-card" id="product-${product.id}" 
                      data-selected-color="${firstColor.name}" 
                      data-selected-img="${firstColor.images[0]}"
+                     data-selected-size="" 
                      data-current-slide="0">
+                
                 <div class="img-wrapper">
-                    <!-- Container de Badges à Direita -->
                     <div class="badge-container">
                         ${product.badges ? product.badges.map(b => `<span class="badge-tag">${b}</span>`).join('') : ''}
                     </div>
                     
-                    <!-- Setas de Navegação -->
                     <button class="card-nav-btn btn-prev-card" onclick="moveCardSlide(${product.id}, -1)">‹</button>
                     <button class="card-nav-btn btn-next-card" onclick="moveCardSlide(${product.id}, 1)">›</button>
 
@@ -110,8 +103,9 @@ function renderProducts(dataToRender) {
                         `).join('')}
                     </div>
                 </div>
+
                 <div class="prod-info">
-                    <div class="error-msg">Selecione a Cor e Tamanho</div>
+                    <div class="error-msg">Selecione Cor e Tamanho</div>
                     <h3>${product.name}</h3>
                     <p class="price">R$ ${product.price.toFixed(2).replace('.', ',')}</p>
                 </div>
@@ -120,42 +114,34 @@ function renderProducts(dataToRender) {
     }).join('');
 }
 
-/* =========================================
-   3. NAVEGAÇÃO DOS PRODUTOS (SLIDERS INTERNOS)
-   ========================================= */
-function moveCardSlide(productId, direction) {
+/* --- LOGICA DOS CARDS --- */
+window.moveCardSlide = (productId, direction) => {
     const card = document.getElementById(`product-${productId}`);
     const slider = document.getElementById(`slider-${productId}`);
-    if (!slider) return;
-
     const totalSlides = slider.querySelectorAll('img').length;
     let current = parseInt(card.dataset.currentSlide) || 0;
     
     current = (current + direction + totalSlides) % totalSlides;
     changeCardSlide(productId, current);
-}
+};
 
-function changeCardSlide(productId, slideIndex) {
+window.changeCardSlide = (productId, slideIndex) => {
     const card = document.getElementById(`product-${productId}`);
     const slider = document.getElementById(`slider-${productId}`);
     const dots = card.querySelectorAll('.card-dot');
     
     if (!slider) return;
-
     slider.style.transform = `translateX(-${slideIndex * 100}%)`;
     
     dots.forEach(dot => dot.classList.remove('active'));
     if(dots[slideIndex]) dots[slideIndex].classList.add('active');
     
     card.dataset.currentSlide = slideIndex;
-    
     const images = slider.querySelectorAll('img');
-    if(images[slideIndex]) {
-        card.dataset.selectedImg = images[slideIndex].src;
-    }
-}
+    if(images[slideIndex]) card.dataset.selectedImg = images[slideIndex].src;
+};
 
-function changeProductColor(swatchElement, imagesArray, colorName) {
+window.changeProductColor = (swatchElement, imagesArray, colorName) => {
     const card = swatchElement.closest('.product-card');
     const slider = card.querySelector('.product-card-slider');
     const productId = card.id.replace('product-', '');
@@ -166,256 +152,119 @@ function changeProductColor(swatchElement, imagesArray, colorName) {
     card.dataset.selectedColor = colorName;
     card.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
     swatchElement.classList.add('active');
-}
+};
 
-function selectSize(sizeElement, size) {
+window.selectSize = (sizeElement, size) => {
     const card = sizeElement.closest('.product-card');
     card.dataset.selectedSize = size;
     sizeElement.parentElement.querySelectorAll('.size-item').forEach(s => s.classList.remove('selected'));
     sizeElement.classList.add('selected');
-}
+};
 
-/* =========================================
-   4. FILTROS E ORDENAÇÃO
-   ========================================= */
+/* --- FILTROS --- */
 function initFilters() {
     const priceInput = document.getElementById('price-filter');
-    const checkboxes = document.querySelectorAll('.filter-check');
+    const checks = document.querySelectorAll('.filter-check');
 
     if (priceInput) {
-        priceInput.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, "");
-            value = (value / 100).toLocaleString('pt-BR', { 
-                style: 'currency', 
-                currency: 'BRL' 
-            });
-            e.target.value = value === "R$ 0,00" ? "" : value;
-            applyFilters();
-        });
+        priceInput.addEventListener('input', applyFilters);
     }
-
-    checkboxes.forEach(check => {
-        check.addEventListener('change', applyFilters);
-    });
+    checks.forEach(c => c.addEventListener('change', applyFilters));
 }
 
 function applyFilters() {
-    const priceInput = document.getElementById('price-filter');
-    const checkboxes = document.querySelectorAll('.filter-check:checked');
-    const sortValue = document.getElementById('sort-products').value;
+    const priceVal = document.getElementById('price-filter').value;
+    const sortVal = document.getElementById('sort-products').value;
+    const checks = document.querySelectorAll('.filter-check:checked');
     
-    let maxPrice = Infinity;
-    if (priceInput && priceInput.value) {
-        maxPrice = parseFloat(priceInput.value.replace(/[R$\s.]/g, "").replace(",", ".")) || Infinity;
-    }
+    let maxPrice = parseFloat(priceVal.replace(/\D/g, "")) / 100 || Infinity;
 
-    const activeFilters = {
-        model: [],
-        sizes: [],
-        color: []
-    };
+    const activeFilters = { model: [], sizes: [], color: [] };
+    checks.forEach(c => activeFilters[c.dataset.type].push(c.value));
 
-    checkboxes.forEach(check => {
-        activeFilters[check.dataset.type].push(check.value);
+    let filtered = productsData.filter(p => {
+        const pMatch = p.price <= maxPrice;
+        const mMatch = activeFilters.model.length === 0 || activeFilters.model.includes(p.model);
+        const sMatch = activeFilters.sizes.length === 0 || p.sizes.some(s => activeFilters.sizes.includes(s));
+        const cMatch = activeFilters.color.length === 0 || p.colors.some(c => activeFilters.color.includes(c.name));
+        return pMatch && mMatch && sMatch && cMatch;
     });
 
-    // 1. Filtragem cruzada
-    let filtered = productsData.filter(product => {
-        const matchesPrice = product.price <= maxPrice;
-        const matchesModel = activeFilters.model.length === 0 || activeFilters.model.includes(product.model);
-        const matchesSize = activeFilters.sizes.length === 0 || product.sizes.some(s => activeFilters.sizes.includes(s));
-        const matchesColor = activeFilters.color.length === 0 || product.colors.some(c => activeFilters.color.includes(c.name));
-
-        return matchesPrice && matchesModel && matchesSize && matchesColor;
-    });
-
-    // 2. Ordenação
-    if (sortValue === 'price-low') {
-        filtered.sort((a, b) => a.price - b.price);
-    } else if (sortValue === 'price-high') {
-        filtered.sort((a, b) => b.price - a.price);
-    }
+    if (sortVal === 'price-low') filtered.sort((a,b) => a.price - b.price);
+    if (sortVal === 'price-high') filtered.sort((a,b) => b.price - a.price);
 
     renderProducts(filtered);
 }
 
-/* =========================================
-   5. CARRINHO DE COMPRAS
-   ========================================= */
-function toggleCart() {
+/* --- CARRINHO --- */
+window.toggleCart = () => {
     document.getElementById('cart-sidebar').classList.toggle('active');
     document.getElementById('cart-overlay').classList.toggle('active');
-}
+};
 
-function addToCart(productId) {
+window.addToCart = (productId) => {
     const card = document.getElementById(`product-${productId}`);
     const size = card.dataset.selectedSize;
     const color = card.dataset.selectedColor;
     const img = card.dataset.selectedImg;
     const errorMsg = card.querySelector('.error-msg');
 
-    if (!size || !color) {
+    if (!size) {
         errorMsg.style.display = 'block';
         return;
     }
     errorMsg.style.display = 'none';
 
     const product = productsData.find(p => p.id === productId);
-    const existingItem = cart.find(item => item.id === productId && item.size === size && item.color === color);
-
-    if (existingItem) {
-        existingItem.quantity++;
-    } else {
-        cart.push({
-            id: productId,
-            name: product.name,
-            price: product.price,
-            size: size,
-            color: color,
-            img: img,
-            quantity: 1,
-            availableSizes: product.sizes,
-            availableColors: product.colors
-        });
-    }
+    cart.push({
+        id: productId,
+        name: product.name,
+        price: product.price,
+        size: size,
+        color: color,
+        img: img,
+        quantity: 1
+    });
 
     updateCartUI();
     toggleCart();
-}
+};
 
 function updateCartUI() {
     const container = document.getElementById('cart-items-container');
-    const totalElement = document.getElementById('cart-subtotal');
-    const countElement = document.getElementById('global-cart-count');
+    const subtotalEl = document.getElementById('cart-subtotal');
+    const badgeEl = document.getElementById('global-cart-count');
 
-    let subtotal = 0;
-    let totalItems = 0;
-
-    if (cart.length === 0) {
-        container.innerHTML = `<p style="text-align:center; padding: 20px;">Seu carrinho está vazio.</p>`;
-    } else {
-        container.innerHTML = cart.map((item, index) => {
-            subtotal += item.price * item.quantity;
-            totalItems += item.quantity;
-            return `
-                <div class="cart-item">
-                    <img src="${item.img}" alt="${item.name}">
-                    <div class="cart-item-info">
-                        <h4>${item.name}</h4>
-                        <div class="cart-item-controls">
-                            <select class="cart-select" onchange="updateCartItem(${index}, 'color', this.value)">
-                                ${item.availableColors.map(c => `<option value="${c.name}" ${c.name === item.color ? 'selected' : ''}>${c.name}</option>`).join('')}
-                            </select>
-                            <select class="cart-select" onchange="updateCartItem(${index}, 'size', this.value)">
-                                ${item.availableSizes.map(s => `<option value="${s}" ${s === item.size ? 'selected' : ''}>${s}</option>`).join('')}
-                            </select>
-                            <div class="qty-control">
-                                <button onclick="changeQty(${index}, -1)">-</button>
-                                <span>${item.quantity}</span>
-                                <button onclick="changeQty(${index}, 1)">+</button>
-                            </div>
-                        </div>
-                        <p class="cart-item-price">R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}</p>
-                    </div>
-                    <button class="btn-remove" onclick="removeFromCart(${index})">
-                        <img src="assets/icon-trash.svg" alt="Remover">
-                    </button>
+    let total = 0;
+    container.innerHTML = cart.map((item, idx) => {
+        total += item.price * item.quantity;
+        return `
+            <div class="cart-item">
+                <img src="${item.img}">
+                <div class="cart-item-info">
+                    <h4>${item.name}</h4>
+                    <p>${item.color} | Tam: ${item.size}</p>
+                    <p class="price">R$ ${item.price.toFixed(2).replace('.', ',')}</p>
                 </div>
-            `;
-        }).join('');
-    }
+                <button class="btn-remove" onclick="removeFromCart(${idx})">×</button>
+            </div>
+        `;
+    }).join('');
 
-    totalElement.innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
-    countElement.innerText = totalItems;
+    subtotalEl.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+    badgeEl.innerText = cart.length;
 }
 
-function changeQty(index, delta) {
-    cart[index].quantity += delta;
-    if (cart[index].quantity < 1) removeFromCart(index);
+window.removeFromCart = (idx) => {
+    cart.splice(idx, 1);
     updateCartUI();
-}
-
-function updateCartItem(index, property, value) {
-    cart[index][property] = value;
-    if(property === 'color') {
-        const prodData = productsData.find(p => p.id === cart[index].id);
-        const colorData = prodData.colors.find(c => c.name === value);
-        cart[index].img = colorData.images[0];
-    }
-    updateCartUI();
-}
-
-function removeFromCart(index) {
-    cart.splice(index, 1);
-    updateCartUI();
-}
-
-/* =========================================
-   6. FAQ
-   ========================================= */
-function initFAQ() {
-    document.querySelectorAll('.faq-question').forEach(q => {
-        q.addEventListener('click', () => {
-            const answer = q.nextElementSibling;
-            const icon = q.querySelector('span');
-            const isOpen = answer.style.display === 'block';
-            
-            // Fecha todos os outros antes de abrir o novo
-            document.querySelectorAll('.faq-answer').forEach(a => a.style.display = 'none');
-            document.querySelectorAll('.faq-question span').forEach(s => s.innerText = '+');
-            
-            if (!isOpen) {
-                answer.style.display = 'block';
-                icon.innerText = '-';
-            }
-        });
-    });
-}
-
-/* =========================================
-   7. RECONHECIMENTO DE USUÁRIO LOGADO
-   ========================================= */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-// Use as mesmas chaves que você colocou no auth.js
-const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
-    authDomain: "SEU_PROJETO.firebaseapp.com",
-    projectId: "SEU_PROJETO",
-    storageBucket: "SEU_PROJETO.appspot.com",
-    messagingSenderId: "---",
-    appId: "---"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-function initUserIdentification() {
-    const userIcon = document.querySelector('img[alt="Conta"]');
-    if (!userIcon) return;
-
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            // USUÁRIO LOGADO
-            userIcon.src = user.photoURL || "assets/icon-user.svg";
-            userIcon.style.borderRadius = "50%";
-            userIcon.style.border = "2px solid #000";
-            userIcon.title = `Minha Conta (${user.email})`;
-            
-            // Clique leva para o Dashboard
-            userIcon.onclick = () => window.location.href = "dashboard.html";
-        } else {
-            // USUÁRIO DESLOGADO
-            userIcon.src = "assets/icon-user.svg";
-            userIcon.style.border = "none";
-            userIcon.onclick = () => window.location.href = "login.html";
-        }
+function initFAQ() {
+    document.querySelectorAll('.faq-question').forEach(btn => {
+        btn.onclick = () => {
+            const ans = btn.nextElementSibling;
+            ans.style.display = ans.style.display === 'block' ? 'none' : 'block';
+        };
     });
 }
-
-// Chame no seu DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    // ... seus outros inits ...
-    initUserIdentification();
-});
