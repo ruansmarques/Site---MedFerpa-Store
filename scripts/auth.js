@@ -9,8 +9,6 @@ import {
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-console.log("🔄 [MedFerpa Auth] Iniciando sistema de autenticação...");
-
 // 1. CONFIGURAÇÃO FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyBgYUAagQzShLLAddybvinAYP17inZkYNg",
@@ -27,10 +25,9 @@ const auth = getAuth(app);
 
 let isLoginMode = true;
 
-// --- FUNÇÕES DE INTERFACE ---
+// --- GERENCIAMENTO DA INTERFACE ---
 
 function updateAuthUI() {
-    console.log("🔄 Alternando para modo:", isLoginMode ? "LOGIN" : "CADASTRO");
     const title = document.getElementById('auth-title');
     const subtitle = document.getElementById('auth-subtitle');
     const btnMain = document.getElementById('btn-auth-main');
@@ -54,62 +51,56 @@ function updateAuthUI() {
     }
 }
 
-// --- ATRIBUIÇÃO DE EVENTOS (Sem depender de DOMContentLoaded) ---
+// --- ESCUTADORES DE EVENTOS (EVENT LISTENERS) ---
 
-function initEvents() {
+document.addEventListener('DOMContentLoaded', () => {
+    // Alternar Login/Cadastro
     const switchBtn = document.getElementById('switch-to-signup');
     if (switchBtn) {
-        switchBtn.style.cursor = "pointer";
-        switchBtn.addEventListener('click', (e) => {
-            e.preventDefault();
+        switchBtn.addEventListener('click', () => {
             isLoginMode = !isLoginMode;
             updateAuthUI();
         });
     }
 
+    // Formulário de Login/Cadastro
     const authForm = document.getElementById('auth-form');
     if (authForm) {
         authForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // CRUCIAL: Impede o recarregamento
-            e.stopPropagation();
-            
-            console.log("🚀 Tentativa de envio de formulário...");
+            e.preventDefault(); // Impede o recarregamento da página
             
             const email = document.getElementById('user-email').value;
             const pass = document.getElementById('user-password').value;
             const btn = document.getElementById('btn-auth-main');
 
-            if (!email || !pass) return alert("Preencha todos os campos.");
-
             btn.disabled = true;
-            btn.innerText = "Aguarde...";
+            btn.innerText = "Processando...";
 
             try {
                 if (isLoginMode) {
                     await signInWithEmailAndPassword(auth, email, pass);
-                    console.log("✅ Login realizado!");
                 } else {
                     await createUserWithEmailAndPassword(auth, email, pass);
-                    console.log("✅ Conta criada!");
                 }
                 window.location.href = "dashboard.html";
             } catch (error) {
-                console.error("❌ Erro Firebase:", error.code);
+                console.error("Erro Firebase:", error.code);
                 alert("Erro: " + traduzirErroFirebase(error.code));
                 btn.disabled = false;
-                btn.innerText = isLoginMode ? "Entrar" : "Cadastrar Agora";
+                updateAuthUI();
             }
         });
     }
 
-    // Modais e Facebook
+    // Modais e Logout
     document.getElementById('open-privacy')?.addEventListener('click', () => openModal('privacy'));
     document.getElementById('open-terms')?.addEventListener('click', () => openModal('terms'));
     document.getElementById('close-modal')?.addEventListener('click', closeModal);
-    document.getElementById('btn-fb-soon')?.addEventListener('click', () => alert('Facebook em breve!'));
-}
+    document.getElementById('btn-logout')?.addEventListener('click', logoutUser);
+    document.getElementById('btn-fb-mock')?.addEventListener('click', () => alert('Facebook em breve!'));
+});
 
-// --- LOGIN GOOGLE ---
+// --- GOOGLE AUTH (Obrigatório ser Global para o Script do Google encontrar) ---
 
 window.handleCredentialResponse = async (response) => {
     const credential = GoogleAuthProvider.credential(response.credential);
@@ -117,8 +108,7 @@ window.handleCredentialResponse = async (response) => {
         await signInWithCredential(auth, credential);
         window.location.href = "dashboard.html";
     } catch (error) {
-        console.error("Erro Google:", error);
-        alert("Falha no login Google.");
+        alert("Erro no login Google.");
     }
 };
 
@@ -129,45 +119,42 @@ function renderGoogleButton() {
             client_id: "101312245182-00p0aknfafhhf3j5733qr7106tvefcep.apps.googleusercontent.com",
             callback: window.handleCredentialResponse
         });
-        google.accounts.id.renderButton(container, { theme: "outline", size: "large", width: 250 });
+        google.accounts.id.renderButton(container, { theme: "outline", size: "large", width: 200 });
     }
 }
 
-// --- MONITOR DE ESTADO DO USUÁRIO ---
+// --- MONITOR DE ESTADO ---
 
 onAuthStateChanged(auth, (user) => {
     const userIcon = document.querySelector('img[alt="Conta"]');
     if (user) {
-        console.log("👤 Usuário logado:", user.email);
         if (userIcon) {
             userIcon.src = user.photoURL || "assets/icon-user.svg";
             userIcon.style.borderRadius = "50%";
-            userIcon.style.border = "2px solid #000";
             userIcon.onclick = () => window.location.href = "dashboard.html";
         }
         if (window.location.pathname.includes('dashboard.html')) {
-            const nameEl = document.getElementById('dash-user-name');
-            if(nameEl) nameEl.innerText = user.displayName || user.email.split('@')[0];
+            document.getElementById('dash-user-name').innerText = user.displayName || user.email.split('@')[0];
+            document.getElementById('info-email').innerText = user.email;
         }
     } else {
-        console.log("👤 Nenhum usuário logado.");
-        if (userIcon) {
-            userIcon.src = "assets/icon-user.svg";
-            userIcon.style.border = "none";
-            userIcon.onclick = () => window.location.href = "login.html";
-        }
+        if (userIcon) userIcon.onclick = () => window.location.href = "login.html";
+        if (window.location.pathname.includes('dashboard.html')) window.location.href = "login.html";
     }
 });
 
 // --- FUNÇÕES AUXILIARES ---
 
+function logoutUser() {
+    signOut(auth).then(() => window.location.href = "login.html");
+}
+
 function openModal(type) {
     const modalData = {
-        privacy: `<h2>Privacidade</h2><p>Seus dados são protegidos conforme a LGPD.</p>`,
-        terms: `<h2>Termos</h2><p>Uso exclusivo para clientes MedFerpa Store.</p>`
+        privacy: `<h2>Privacidade</h2><p>Seus dados estão protegidos.</p>`,
+        terms: `<h2>Termos</h2><p>Uso exclusivo MedFerpa.</p>`
     };
-    const modalText = document.getElementById('modal-text');
-    if(modalText) modalText.innerHTML = modalData[type];
+    document.getElementById('modal-text').innerHTML = modalData[type];
     document.getElementById('policy-modal').style.display = 'flex';
 }
 
@@ -179,15 +166,11 @@ function traduzirErroFirebase(code) {
     switch (code) {
         case 'auth/wrong-password': return 'Senha incorreta.';
         case 'auth/user-not-found': return 'E-mail não cadastrado.';
-        case 'auth/email-already-in-use': return 'Este e-mail já possui uma conta.';
-        case 'auth/weak-password': return 'A senha é muito fraca (mínimo 6 caracteres).';
-        default: return 'Ocorreu um erro. Verifique sua conexão.';
+        case 'auth/email-already-in-use': return 'E-mail já cadastrado.';
+        default: return 'Erro inesperado. Tente novamente.';
     }
 }
 
-// EXECUÇÃO IMEDIATA
-initEvents();
+// Inicializa o botão do Google
 if (document.readyState === 'complete') renderGoogleButton();
 else window.addEventListener('load', renderGoogleButton);
-
-console.log("✅ [MedFerpa Auth] Sistema pronto!");

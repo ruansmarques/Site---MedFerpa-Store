@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="styles/login.css">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
     
-    <!-- Script Google Identity -->
+    <!-- Script Oficial Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -25,10 +25,9 @@
                 <p class="subtitle" id="auth-subtitle">Faça login ou crie uma conta</p>
 
                 <div class="social-auth">
-                    <!-- Botão Google -->
-                    <div id="google-btn-container" style="min-height: 44px;"></div>
+                    <div id="google-btn-container"></div>
                     
-                    <button class="btn-social" type="button" id="btn-fb-soon">
+                    <button class="btn-social" type="button" id="btn-fb-mock">
                         <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook">
                     </button>
                 </div>
@@ -37,8 +36,7 @@
                     <span>ou</span>
                 </div>
 
-                <!-- FORMULÁRIO -->
-                <form id="auth-form" novalidate>
+                <form id="auth-form">
                     <div class="form-group">
                         <input type="email" id="user-email" placeholder="E-mail" class="input-field" required>
                         <input type="password" id="user-password" placeholder="Sua Senha" class="input-field" required minlength="6">
@@ -60,7 +58,6 @@
         </footer>
     </main>
 
-    <!-- MODAL POLÍTICAS -->
     <div id="policy-modal" class="modal-overlay">
         <div class="modal-content">
             <div id="modal-text" class="modal-text-body"></div>
@@ -70,7 +67,6 @@
         </div>
     </div>
 
-    <!-- SCRIPT PRINCIPAL -->
     <script type="module" src="scripts/auth.js"></script>
 </body>
 </html>
