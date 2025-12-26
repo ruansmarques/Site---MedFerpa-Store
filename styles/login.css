@@ -68,6 +68,31 @@ body {
     transition: background 0.2s;
 }
 
+/* Garante que o container do Google não quebre o layout */
+#google-btn-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Ajuste fino na área social para os botões ficarem iguais */
+.social-auth {
+    display: flex; /* Mudamos de grid para flex para melhor controle */
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.social-auth > * {
+    flex: 1; /* Faz ambos ocuparem o mesmo espaço lateral */
+}
+
+/* O botão do Facebook permanece manual */
+.btn-social {
+    width: 100%;
+    /* ... resto do seu código ... */
+}
+
 .btn-social:hover { background: #f9f9f9; }
 .btn-social img { width: 22px; }
 
