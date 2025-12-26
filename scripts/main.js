@@ -371,3 +371,40 @@ function initFAQ() {
         });
     });
 }
+
+/* =========================================
+   7. RECONHECIMENTO DE USUÁRIO LOGADO
+   ========================================= */
+function checkUserLogin() {
+    const userData = localStorage.getItem('user_logged');
+    const userIcon = document.querySelector('img[alt="Conta"]');
+
+    if (userData && userIcon) {
+        const user = JSON.parse(userData);
+        
+        // Substitui o ícone de 'bonequinho' pela foto do usuário do Google
+        userIcon.src = user.picture;
+        userIcon.style.borderRadius = "50%";
+        userIcon.style.border = "2px solid #000";
+        userIcon.title = `Logado como: ${user.name} (Clique para sair)`;
+
+        // Adiciona evento para deslogar
+        userIcon.onclick = () => {
+            if(confirm("Deseja encerrar a sessão?")) {
+                localStorage.removeItem('user_logged');
+                window.location.reload();
+            }
+        };
+    } else if (userIcon) {
+        // Se não estiver logado, o ícone leva para a página de login
+        userIcon.onclick = () => {
+            window.location.href = "login.html";
+        };
+    }
+}
+
+// Chame a função dentro do DOMContentLoaded existente no seu main.js
+document.addEventListener('DOMContentLoaded', () => {
+    // ... seus inits anteriores ...
+    checkUserLogin(); 
+});
