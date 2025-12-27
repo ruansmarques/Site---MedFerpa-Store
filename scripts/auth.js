@@ -1,11 +1,3 @@
-/**
- * SISTEMA DE AUTENTICAÇÃO E PERSISTÊNCIA - MEDFERPA STORE
- * Versão: v.105
- * 
- * Este script gerencia o ciclo de vida do usuário (Login, Cadastro, Sessão)
- * utilizando Firebase Auth e persistência de dados complementares.
- */
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
     getAuth, 
@@ -19,7 +11,17 @@ import {
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// 1. CONFIGURAÇÃO CENTRAL DO FIREBASE
+// Importação do Firestore para salvar dados permanentemente
+import { 
+    getFirestore, 
+    doc, 
+    setDoc, 
+    getDoc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* ============================================================
+   1. CONFIGURAÇÃO FIREBASE E INICIALIZAÇÃO
+   ============================================================ */
 const firebaseConfig = {
     apiKey: "AIzaSyBgYUAagQzShLLAddybvinAYP17inZkYNg",
     authDomain: "medferpa-store-1cd4d.firebaseapp.com",
@@ -30,25 +32,22 @@ const firebaseConfig = {
     measurementId: "G-YSPZM27EEK"
 };
 
-// Inicialização
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app); // Banco de dados Firestore
 const googleProvider = new GoogleAuthProvider();
 
-// Estado interno da interface de login
 let isLoginMode = true;
 
 /* ============================================================
-   2. MONITOR DE SESSÃO (SINCRONIZAÇÃO DE HEADER)
+   2. MONITOR DE SESSÃO (SINCRONIZAÇÃO DE HEADER E DASHBOARD)
    ============================================================ */
-
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     const userIcon = document.getElementById('user-icon-header');
     const userLink = document.getElementById('user-link-header');
     
     if (user) {
-        // --- ESTADO: USUÁRIO LOGADO ---
-        // Altera o link para o Dashboard e atualiza a foto do perfil no header
+        // Atualiza Header
         if (userLink) userLink.href = "dashboard.html";
         if (userIcon) {
             userIcon.src = user.photoURL || "assets/icon-user.svg";
@@ -56,19 +55,15 @@ onAuthStateChanged(auth, (user) => {
             userIcon.style.border = "2px solid #000";
         }
 
-        // Se o usuário estiver na página do Dashboard, preenche as informações
+        // Se estiver no Dashboard, busca dados no Firestore
         if (window.location.pathname.includes('dashboard.html')) {
-            populateDashboard(user);
+            loadUserDataFromFirestore(user);
         }
     } else {
-        // --- ESTADO: USUÁRIO DESLOGADO ---
+        // Deslogado
         if (userLink) userLink.href = "login.html";
-        if (userIcon) {
-            userIcon.src = "assets/icon-user.svg";
-            userIcon.style.border = "none";
-        }
+        if (userIcon) userIcon.src = "assets/icon-user.svg";
 
-        // Proteção de Rota: Se tentar acessar o dashboard sem login, volta para o login
         if (window.location.pathname.includes('dashboard.html')) {
             window.location.href = "login.html";
         }
@@ -76,61 +71,127 @@ onAuthStateChanged(auth, (user) => {
 });
 
 /* ============================================================
-   3. LÓGICA DO DASHBOARD (MEU PERFIL)
+   3. GESTÃO DE DADOS DO USUÁRIO (FIRESTORE)
    ============================================================ */
 
-function populateDashboard(user) {
+// Carregar dados do Banco de Dados
+async function loadUserDataFromFirestore(user) {
+    // Referências do HTML
     const dashName = document.getElementById('dash-user-name');
     const dashEmail = document.getElementById('dash-user-email');
     const dashImg = document.getElementById('dash-user-img');
-    
-    // Dados Básicos do Auth
-    if (dashName) dashName.innerText = user.displayName || "Usuário MedFerpa";
-    if (dashEmail) dashEmail.innerText = user.email;
-    if (dashImg && user.photoURL) dashImg.src = user.photoURL;
-
-    // Preenchimento dos inputs de edição
     const editName = document.getElementById('edit-name');
     const editEmail = document.getElementById('edit-email');
+
+    // Dados básicos do Auth
+    if (dashName) dashName.innerText = user.displayName || "Usuário";
+    if (dashEmail) dashEmail.innerText = user.email;
+    if (dashImg) dashImg.src = user.photoURL || "assets/icon-user.svg";
     if (editName) editName.value = user.displayName || "";
     if (editEmail) editEmail.value = user.email;
 
-    // Recupera dados extras (Telefone/Gênero) salvos localmente vinculados ao UID
-    const customData = JSON.parse(localStorage.getItem(`user_meta_${user.uid}`));
-    if (customData) {
-        if (document.getElementById('edit-gender')) document.getElementById('edit-gender').value = customData.gender || "não informado";
-        if (document.getElementById('edit-phone')) document.getElementById('edit-phone').value = customData.phone || "";
-    }
+    // Busca dados complementares no Firestore
+    try {
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
 
-    // Recupera Endereço vinculado ao UID
-    const savedAddr = JSON.parse(localStorage.getItem(`user_addr_${user.uid}`));
-    if (savedAddr) {
-        if (document.getElementById('addr-cep')) document.getElementById('addr-cep').value = savedAddr.cep || "";
-        if (document.getElementById('addr-bairro')) document.getElementById('addr-bairro').value = savedAddr.bairro || "";
-        if (document.getElementById('addr-rua')) document.getElementById('addr-rua').value = savedAddr.rua || "";
-        if (document.getElementById('addr-num')) document.getElementById('addr-num').value = savedAddr.num || "";
-        if (document.getElementById('addr-comp')) document.getElementById('addr-comp').value = savedAddr.comp || "";
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            // Preenche Perfil
+            if (document.getElementById('edit-gender')) document.getElementById('edit-gender').value = data.gender || "não informado";
+            if (document.getElementById('edit-phone')) document.getElementById('edit-phone').value = data.phone || "";
+            
+            // Preenche Endereço
+            if (document.getElementById('addr-cep')) document.getElementById('addr-cep').value = data.address?.cep || "";
+            if (document.getElementById('addr-bairro')) document.getElementById('addr-bairro').value = data.address?.bairro || "";
+            if (document.getElementById('addr-rua')) document.getElementById('addr-rua').value = data.address?.rua || "";
+            if (document.getElementById('addr-num')) document.getElementById('addr-num').value = data.address?.num || "";
+            if (document.getElementById('addr-comp')) document.getElementById('addr-comp').value = data.address?.comp || "";
+        }
+    } catch (e) {
+        console.error("Erro ao carregar dados:", e);
     }
-
-    // Renderiza a lista de pedidos (se existir)
-    if (typeof window.renderUserOrders === 'function') window.renderUserOrders();
 }
 
+// Salvar Perfil no Firestore
+document.getElementById('save-profile')?.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const newName = document.getElementById('edit-name').value;
+    const gender = document.getElementById('edit-gender').value;
+    const phone = document.getElementById('edit-phone').value;
+
+    try {
+        // 1. Atualiza nome no Auth
+        await updateProfile(user, { displayName: newName });
+        
+        // 2. Salva no Firestore
+        await setDoc(doc(db, "users", user.uid), {
+            name: newName,
+            gender: gender,
+            phone: phone
+        }, { merge: true });
+
+        alert("Dados salvos com sucesso!");
+        location.reload();
+    } catch (e) {
+        alert("Erro ao salvar.");
+    }
+});
+
+// Salvar Endereço no Firestore
+document.getElementById('save-address')?.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const address = {
+        cep: document.getElementById('addr-cep').value,
+        bairro: document.getElementById('addr-bairro').value,
+        rua: document.getElementById('addr-rua').value,
+        num: document.getElementById('addr-num').value,
+        comp: document.getElementById('addr-comp').value
+    };
+
+    try {
+        await setDoc(doc(db, "users", user.uid), { address }, { merge: true });
+        alert("Endereço atualizado!");
+        location.reload();
+    } catch (e) {
+        alert("Erro ao salvar endereço.");
+    }
+});
+
+// Alterar Foto de Perfil
+document.getElementById('upload-photo')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        const base64 = event.target.result;
+        try {
+            await updateProfile(auth.currentUser, { photoURL: base64 });
+            alert("Foto atualizada!");
+            location.reload();
+        } catch (err) { alert("Erro no upload."); }
+    };
+    reader.readAsDataURL(file);
+});
+
 /* ============================================================
-   4. AÇÕES DE AUTENTICAÇÃO (LOGIN / CADASTRO / SOCIAL)
+   4. AUTENTICAÇÃO (LOGIN, CADASTRO, GOOGLE, LOGOUT)
    ============================================================ */
 
-// LOGIN SOCIAL GOOGLE
 window.loginWithGoogle = async () => {
     try {
         await signInWithPopup(auth, googleProvider);
         window.location.href = "dashboard.html";
     } catch (error) {
-        console.error("Erro Google Login:", error);
+        console.error(error);
     }
 };
 
-// FORMULÁRIO DE LOGIN/CADASTRO MANUAL
 const authForm = document.getElementById('auth-form');
 if (authForm) {
     authForm.addEventListener('submit', async (e) => {
@@ -140,7 +201,7 @@ if (authForm) {
         const btn = document.getElementById('btn-auth-main');
 
         btn.disabled = true;
-        btn.innerText = "Processando...";
+        btn.innerText = "Aguarde...";
 
         try {
             if (isLoginMode) {
@@ -150,52 +211,41 @@ if (authForm) {
             }
             window.location.href = "dashboard.html";
         } catch (error) {
-            alert("Erro de Autenticação: " + traduzirErroFirebase(error.code));
+            alert("Falha: " + error.code);
             btn.disabled = false;
-            btn.innerText = isLoginMode ? "Entrar" : "Criar Conta";
         }
     });
 }
 
-// LOGOUT
-window.logoutUser = () => {
-    signOut(auth).then(() => {
-        window.location.href = "index.html";
-    });
-};
+window.logoutUser = () => signOut(auth).then(() => window.location.href = "index.html");
 
-/* ============================================================
-   5. AUXILIARES DE INTERFACE
-   ============================================================ */
-
-// Alterna entre modo Login e modo Cadastro na tela de login.html
-window.toggleAuthMode = () => {
-    isLoginMode = !isLoginMode;
-    const title = document.getElementById('auth-title');
-    const subtitle = document.getElementById('auth-subtitle');
-    const btnMain = document.getElementById('btn-auth-main');
-    const switchText = document.getElementById('switch-to-signup');
-
-    if (title) {
-        title.innerText = isLoginMode ? "Fazer login" : "Criar sua conta";
-        subtitle.innerText = isLoginMode ? "Entre com seus dados" : "Cadastre-se para aproveitar as vantagens";
-        btnMain.innerText = isLoginMode ? "Entrar" : "Cadastrar Agora";
-        switchText.innerText = isLoginMode ? "Cadastre-se aqui" : "Já tenho conta. Entrar";
-    }
-};
-
-// Tradução de mensagens técnicas do Firebase para o usuário final
-function traduzirErroFirebase(code) {
-    switch (code) {
-        case 'auth/invalid-credential': return 'E-mail ou senha incorretos.';
-        case 'auth/email-already-in-use': return 'Este e-mail já está em uso.';
-        case 'auth/weak-password': return 'A senha deve ter pelo menos 6 caracteres.';
-        case 'auth/user-not-found': return 'Usuário não encontrado.';
-        default: return 'Ocorreu um erro inesperado. Tente novamente.';
-    }
-}
-
-// Event Listeners diretos
+// Event Listeners Globais
 document.getElementById('btn-logout-dash')?.addEventListener('click', window.logoutUser);
 document.getElementById('btn-google-login')?.addEventListener('click', window.loginWithGoogle);
-document.getElementById('switch-to-signup')?.addEventListener('click', window.toggleAuthMode);
+
+/* ============================================================
+   5. MODAIS (POLÍTICA E TERMOS)
+   ============================================================ */
+
+window.openModal = (type) => {
+    const modal = document.getElementById('policy-modal');
+    const textBody = document.getElementById('modal-text');
+    
+    const content = {
+        privacy: `<h2>Privacidade</h2><p>Na MedFerpa, sua segurança é prioridade. Não compartilhamos seus dados com terceiros e utilizamos criptografia Firebase para proteger seu acesso.</p>`,
+        terms: `<h2>Termos de Serviço</h2><p>Ao utilizar nossa loja, você concorda com os prazos de entrega e nossa política de trocas de 30 dias. O uso indevido da conta pode levar ao bloqueio.</p>`
+    };
+
+    if (textBody) textBody.innerHTML = content[type];
+    if (modal) modal.style.display = 'flex';
+};
+
+window.closeModal = () => {
+    const modal = document.getElementById('policy-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+// Bind dos botões do footer de login
+document.getElementById('open-privacy')?.addEventListener('click', () => window.openModal('privacy'));
+document.getElementById('open-terms')?.addEventListener('click', () => window.openModal('terms'));
+document.getElementById('close-modal')?.addEventListener('click', window.closeModal);

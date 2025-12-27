@@ -1,18 +1,16 @@
-/* =========================================
-   SISTEMA CENTRAL MEDFERPA - VITRINE E CARRINHO
-   ========================================= */
-
+/* ============================================================
+   1. CONFIGURAÇÕES GLOBAIS E ESTADO DO CARRINHO
+   ============================================================ */
 let cart = [];
 let currentSlide = 0;
 let slideTimer;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Inicializa o estado do site
-    loadCart(); // Recupera o carrinho do localStorage
-    renderProducts(productsData); // Gera os cards iniciais
-    initHeroSlider(); // Inicia o banner principal
-    initFilters(); // Ativa os ouvintes dos filtros
-    initFAQ(); // Ativa as perguntas frequentes
+    loadCart(); 
+    renderProducts(productsData); 
+    initHeroSlider(); 
+    initFilters(); 
+    initFAQ(); 
 
     // Listener para o seletor de Ordenação
     const sortSelect = document.getElementById('sort-products');
@@ -21,16 +19,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-/* =========================================
-   1. BANNER PRINCIPAL (HERO SLIDER)
-   ========================================= */
+/* ============================================================
+   2. INTERFACE E NAVEGAÇÃO (MENU, BUSCA, OVERLAY)
+   ============================================================ */
+
+// Alternar Carrinho
+window.toggleCart = () => {
+    document.getElementById('cart-sidebar').classList.toggle('active');
+    document.getElementById('cart-overlay').classList.toggle('active');
+};
+
+// Alternar Menu Mobile (Hambúrguer)
+window.toggleMenuMobile = () => {
+    const nav = document.getElementById('main-nav');
+    const hamburger = document.getElementById('hamburger');
+    if (nav) nav.classList.toggle('active');
+    if (hamburger) hamburger.classList.toggle('active');
+    document.getElementById('cart-overlay').classList.toggle('active');
+};
+
+// Alternar Barra de Busca
+window.toggleSearch = () => {
+    // Lógica para abrir campo de busca (pode ser expandida futuramente)
+    const searchTerms = prompt("O que você está procurando?");
+    if (searchTerms) {
+        console.log("Buscando por:", searchTerms);
+        // Filtro rápido por nome
+        const filtered = productsData.filter(p => 
+            p.name.toLowerCase().includes(searchTerms.toLowerCase())
+        );
+        renderProducts(filtered);
+    }
+};
+
+// Fechar todos os drawers (Carrinho e Menu) ao clicar no Overlay
+window.closeAllDrawers = () => {
+    document.getElementById('cart-sidebar').classList.remove('active');
+    document.getElementById('cart-overlay').classList.remove('active');
+    const nav = document.getElementById('main-nav');
+    if (nav) nav.classList.remove('active');
+};
+
+/* ============================================================
+   3. BANNER PRINCIPAL (HERO SLIDER) - INTERVALO 10 SEGUNDOS
+   ============================================================ */
 function initHeroSlider() {
     startSlideTimer();
 }
 
 function startSlideTimer() {
     clearInterval(slideTimer);
-    slideTimer = setInterval(() => changeSlide(currentSlide + 1), 8000);
+    // Definido exatamente 10000ms (10 segundos)
+    slideTimer = setInterval(() => changeSlide(currentSlide + 1), 10000);
 }
 
 function changeSlide(index) {
@@ -49,23 +89,18 @@ function changeSlide(index) {
 
 window.goToSlide = (index) => {
     changeSlide(index);
-    startSlideTimer(); // Reinicia o tempo ao clicar manualmente
+    startSlideTimer(); 
 };
 
-/* =========================================
-   2. RENDERIZAÇÃO DA VITRINE
-   ========================================= */
+/* ============================================================
+   4. RENDERIZAÇÃO DA VITRINE (PRODUTOS)
+   ============================================================ */
 function renderProducts(dataToRender) {
     const container = document.getElementById('products-list');
     if (!container) return;
 
     if (dataToRender.length === 0) {
-        container.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 80px 20px;">
-                <h3 style="font-size: 18px; color: #666;">Nenhum produto encontrado.</h3>
-                <p style="font-size: 14px; color: #999; margin-top: 10px;">Tente ajustar os filtros de preço ou categoria.</p>
-            </div>
-        `;
+        container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px;">Nenhum produto encontrado.</div>`;
         return;
     }
 
@@ -85,9 +120,11 @@ function renderProducts(dataToRender) {
                     <button class="card-nav-btn btn-prev-card" onclick="moveCardSlide(${product.id}, -1)">‹</button>
                     <button class="card-nav-btn btn-next-card" onclick="moveCardSlide(${product.id}, 1)">›</button>
 
-                    <div class="product-card-slider" id="slider-${product.id}">
-                        ${firstColor.images.map(img => `<img src="${img}" alt="${product.name}">`).join('')}
-                    </div>
+                    <a href="product.html?id=${product.id}" style="text-decoration:none">
+                        <div class="product-card-slider" id="slider-${product.id}">
+                            ${firstColor.images.map(img => `<img src="${img}" alt="${product.name}">`).join('')}
+                        </div>
+                    </a>
 
                     <div class="card-dots">
                         ${firstColor.images.map((_, idx) => `
@@ -115,7 +152,7 @@ function renderProducts(dataToRender) {
                     </div>
                 </div>
                 <div class="prod-info">
-                    <div class="error-msg">Por favor, selecione um tamanho!</div>
+                    <div class="error-msg" style="color:red; font-size:11px; display:none; margin-bottom:5px;">Selecione um tamanho!</div>
                     <h3>${product.name}</h3>
                     <p class="price">R$ ${product.price.toFixed(2).replace('.', ',')}</p>
                 </div>
@@ -124,16 +161,16 @@ function renderProducts(dataToRender) {
     }).join('');
 }
 
-/* =========================================
-   3. LOGICA INTERNA DOS CARDS (CORES/SLIDES)
-   ========================================= */
+/* ============================================================
+   5. LÓGICA INTERNA DOS CARDS (SLIDES E CORES)
+   ============================================================ */
 window.moveCardSlide = (productId, direction) => {
     const card = document.getElementById(`product-${productId}`);
     const slider = document.getElementById(`slider-${productId}`);
-    const totalSlides = slider.querySelectorAll('img').length;
+    const images = slider.querySelectorAll('img');
     let current = parseInt(card.dataset.currentSlide) || 0;
     
-    current = (current + direction + totalSlides) % totalSlides;
+    current = (current + direction + images.length) % images.length;
     window.changeCardSlide(productId, current);
 };
 
@@ -142,9 +179,8 @@ window.changeCardSlide = (productId, slideIndex) => {
     const slider = document.getElementById(`slider-${productId}`);
     const dots = card.querySelectorAll('.card-dot');
     
-    if (!slider) return;
+    if(!slider) return;
     slider.style.transform = `translateX(-${slideIndex * 100}%)`;
-    
     dots.forEach(dot => dot.classList.remove('active'));
     if(dots[slideIndex]) dots[slideIndex].classList.add('active');
     
@@ -171,12 +207,12 @@ window.selectSize = (sizeElement, size) => {
     card.dataset.selectedSize = size;
     sizeElement.parentElement.querySelectorAll('.size-item').forEach(s => s.classList.remove('selected'));
     sizeElement.classList.add('selected');
-    if (card.querySelector('.error-msg')) card.querySelector('.error-msg').style.display = 'none';
+    card.querySelector('.error-msg').style.display = 'none';
 };
 
-/* =========================================
-   4. FILTROS E ORDENAÇÃO
-   ========================================= */
+/* ============================================================
+   6. FILTROS E ORDENAÇÃO
+   ============================================================ */
 function initFilters() {
     const priceInput = document.getElementById('price-filter');
     const checkboxes = document.querySelectorAll('.filter-check');
@@ -219,44 +255,26 @@ function applyFilters() {
     renderProducts(filtered);
 }
 
-/* =========================================
-   5. CARRINHO DE COMPRAS (LÓGICA E UI)
-   ========================================= */
-window.toggleCart = () => {
-    document.getElementById('cart-sidebar').classList.toggle('active');
-    document.getElementById('cart-overlay').classList.toggle('active');
-};
-
+/* ============================================================
+   7. CARRINHO DE COMPRAS (DETALHADO)
+   ============================================================ */
 window.addToCart = (productId) => {
     const card = document.getElementById(`product-${productId}`);
     const size = card.dataset.selectedSize;
-    const color = card.dataset.selectedColor;
-    const img = card.dataset.selectedImg;
-    const errorMsg = card.querySelector('.error-msg');
-
     if (!size) {
-        if (errorMsg) errorMsg.style.display = 'block';
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.querySelector('.error-msg').style.display = 'block';
         return;
     }
 
     const product = productsData.find(p => p.id === productId);
-    
-    // Identificação única (ID + Cor + Tamanho)
-    const existing = cart.find(item => item.id === productId && item.size === size && item.color === color);
+    const color = card.dataset.selectedColor;
+    const img = card.dataset.selectedImg;
 
+    const existing = cart.find(i => i.id === productId && i.size === size && i.color === color);
     if (existing) {
         existing.quantity += 1;
     } else {
-        cart.push({
-            id: productId,
-            name: product.name,
-            price: product.price,
-            size: size,
-            color: color,
-            img: img,
-            quantity: 1
-        });
+        cart.push({ id: productId, name: product.name, price: product.price, size, color, img, quantity: 1 });
     }
 
     updateCartUI();
@@ -268,16 +286,15 @@ function updateCartUI() {
     const container = document.getElementById('cart-items-container');
     const subtotalEl = document.getElementById('cart-subtotal');
     const countEl = document.getElementById('global-cart-count');
-
     let total = 0;
-    let itemsQty = 0;
+    let qtyCount = 0;
 
     if (cart.length === 0) {
         container.innerHTML = `<p style="text-align:center; padding:40px 20px; color:#999;">Seu carrinho está vazio.</p>`;
     } else {
         container.innerHTML = cart.map((item, index) => {
             total += item.price * item.quantity;
-            itemsQty += item.quantity;
+            qtyCount += item.quantity;
             const prodData = productsData.find(p => p.id === item.id);
 
             return `
@@ -286,9 +303,11 @@ function updateCartUI() {
                     <div class="cart-item-info">
                         <h4>${item.name}</h4>
                         <div class="cart-item-controls">
+                            <!-- Troca de Cor no Carrinho -->
                             <select class="cart-select" onchange="updateCartItemProperty(${index}, 'color', this.value)">
                                 ${prodData.colors.map(c => `<option value="${c.name}" ${c.name === item.color ? 'selected' : ''}>${c.name}</option>`).join('')}
                             </select>
+                            <!-- Troca de Tamanho no Carrinho -->
                             <select class="cart-select" onchange="updateCartItemProperty(${index}, 'size', this.value)">
                                 ${prodData.sizes.map(s => `<option value="${s}" ${s === item.size ? 'selected' : ''}>${s}</option>`).join('')}
                             </select>
@@ -301,7 +320,7 @@ function updateCartUI() {
                         <p class="cart-item-price">R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}</p>
                     </div>
                     <button class="btn-remove" onclick="removeFromCart(${index})">
-                        <img src="assets/icon-trash.svg" alt="Remover">
+                        <img src="assets/icon-trash.svg" alt="Remover" style="width:15px; opacity:0.5;">
                     </button>
                 </div>
             `;
@@ -309,15 +328,8 @@ function updateCartUI() {
     }
 
     subtotalEl.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-    if (countEl) countEl.innerText = itemsQty;
+    if (countEl) countEl.innerText = qtyCount;
 }
-
-window.changeQty = (index, delta) => {
-    cart[index].quantity += delta;
-    if (cart[index].quantity < 1) cart.splice(index, 1);
-    updateCartUI();
-    saveCart();
-};
 
 window.updateCartItemProperty = (index, property, value) => {
     cart[index][property] = value;
@@ -330,52 +342,40 @@ window.updateCartItemProperty = (index, property, value) => {
     saveCart();
 };
 
+window.changeQty = (index, delta) => {
+    cart[index].quantity += delta;
+    if (cart[index].quantity <= 0) cart.splice(index, 1);
+    updateCartUI();
+    saveCart();
+};
+
 window.removeFromCart = (index) => {
     cart.splice(index, 1);
     updateCartUI();
     saveCart();
 };
 
-/* =========================================
-   6. PERSISTÊNCIA E TRANSIÇÃO (CHECKOUT)
-   ========================================= */
-function saveCart() {
-    localStorage.setItem('medferpa_cart', JSON.stringify(cart));
-}
-
+function saveCart() { localStorage.setItem('medferpa_cart', JSON.stringify(cart)); }
 function loadCart() {
     const saved = localStorage.getItem('medferpa_cart');
-    if (saved) {
-        try {
-            cart = JSON.parse(saved);
-            updateCartUI();
-        } catch (e) { cart = []; }
-    }
+    if (saved) { cart = JSON.parse(saved); updateCartUI(); }
 }
 
 window.iniciarFluxoCheckout = () => {
-    if (cart.length === 0) return alert("Seu carrinho está vazio!");
-    
-    // Captura horário de entrega selecionado
-    const seletor = document.querySelector('.time-selector');
-    if (seletor && seletor.value) {
-        localStorage.setItem('medferpa_selected_time', seletor.value);
-    }
-    
-    saveCart();
+    if (cart.length === 0) return alert("Adicione produtos para continuar.");
     window.location.href = 'checkout.html';
 };
 
-/* =========================================
-   7. FAQ
-   ========================================= */
+/* ============================================================
+   8. PERGUNTAS FREQUENTES (FAQ ACCORDION)
+   ============================================================ */
 function initFAQ() {
     document.querySelectorAll('.faq-question').forEach(btn => {
         btn.onclick = () => {
-            const ans = btn.nextElementSibling;
-            const isOpen = ans.style.display === 'block';
+            const answer = btn.nextElementSibling;
+            const isOpen = answer.style.display === 'block';
             document.querySelectorAll('.faq-answer').forEach(a => a.style.display = 'none');
-            ans.style.display = isOpen ? 'none' : 'block';
+            answer.style.display = isOpen ? 'none' : 'block';
         };
     });
 }

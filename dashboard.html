@@ -4,13 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minha Conta | MedFerpa Store</title>
+    <!-- CSS DO DASHBOARD -->
     <link rel="stylesheet" href="styles/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <div class="dashboard-container">
-        <!-- BARRA LATERAL -->
+        
+        /* ============================================================
+           1. BARRA LATERAL (SIDEBAR)
+           ============================================================ */
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <img src="assets/logo.svg" alt="MedFerpa" onclick="window.location.href='index.html'">
@@ -36,10 +40,12 @@
             </div>
         </aside>
 
-        <!-- CONTEÚDO PRINCIPAL -->
+        /* ============================================================
+           2. CONTEÚDO PRINCIPAL (MAIN CONTENT)
+           ============================================================ */
         <main class="main-content">
             
-            <!-- CABEÇALHO DO USUÁRIO -->
+            <!-- CABEÇALHO DO USUÁRIO (AVATAR E NOME) -->
             <header class="user-header">
                 <div class="avatar-wrapper">
                     <div class="avatar-border">
@@ -57,7 +63,9 @@
             <!-- SEÇÕES DINÂMICAS -->
             <div class="sections-wrapper">
                 
-                <!-- 1. MEU PERFIL -->
+                /* ============================================================
+                   3. SEÇÃO: MEU PERFIL (DADOS PESSOAIS)
+                   ============================================================ */
                 <section id="section-profile" class="content-section active">
                     <div class="info-card">
                         <div class="card-header">
@@ -75,7 +83,7 @@
                             </div>
                             <div class="info-item">
                                 <label>Gênero</label>
-                                <select id="edit-gender">
+                                <select id="edit-gender" disabled>
                                     <option value="não informado">Não informado</option>
                                     <option value="masculino">Masculino</option>
                                     <option value="feminino">Feminino</option>
@@ -91,7 +99,9 @@
                     </div>
                 </section>
 
-                <!-- 2. MEUS PEDIDOS -->
+                /* ============================================================
+                   4. SEÇÃO: MEUS PEDIDOS
+                   ============================================================ */
                 <section id="section-orders" class="content-section">
                     <div class="info-card">
                         <h3>Pedidos em andamento</h3>
@@ -99,13 +109,11 @@
                             <p class="empty-msg">Você não tem pedidos recentes.</p>
                         </div>
                     </div>
-                    <div class="info-card" style="margin-top:20px">
-                        <h3>Histórico de pedidos</h3>
-                        <p class="empty-msg">Nenhum pedido finalizado.</p>
-                    </div>
                 </section>
 
-                <!-- 3. MEU ENDEREÇO -->
+                /* ============================================================
+                   5. SEÇÃO: MEU ENDEREÇO
+                   ============================================================ */
                 <section id="section-address" class="content-section">
                     <div class="info-card">
                         <div class="card-header">
@@ -113,51 +121,38 @@
                             <button class="edit-toggle" onclick="toggleEdit('address')">Editar</button>
                         </div>
                         <div class="info-list">
-                            <div class="info-item"><label>CEP</label><input type="text" id="addr-cep" value="00000-000"></div>
-                            <div class="info-item"><label>Bairro</label><input type="text" id="addr-bairro" value="..."></div>
-                            <div class="info-item"><label>Rua/Avenida</label><input type="text" id="addr-rua" value="..."></div>
-                            <div class="info-item"><label>Número</label><input type="text" id="addr-num" value="S/N"></div>
-                            <div class="info-item"><label>Complemento</label><input type="text" id="addr-comp" value="-"></div>
+                            <div class="info-item"><label>CEP</label><input type="text" id="addr-cep" value="00000-000" disabled></div>
+                            <div class="info-item"><label>Bairro</label><input type="text" id="addr-bairro" value="..." disabled></div>
+                            <div class="info-item"><label>Rua/Avenida</label><input type="text" id="addr-rua" value="..." disabled></div>
+                            <div class="info-item"><label>Número</label><input type="text" id="addr-num" value="S/N" disabled></div>
+                            <div class="info-item"><label>Complemento</label><input type="text" id="addr-comp" value="-" disabled></div>
                             <button class="save-btn" id="save-address" style="display:none">Salvar Endereço</button>
                         </div>
                     </div>
                 </section>
 
-                <!-- 4. SUPORTE E SEGURANÇA -->
+                /* ============================================================
+                   6. SEÇÃO: SUPORTE
+                   ============================================================ */
                 <section id="section-support" class="content-section">
-                    <div class="info-card support-card" style="margin-top: 20px;">
+                    <div class="info-card support-card">
                         <img src="https://www.svgrepo.com/show/452133/whatsapp.svg" width="40">
                         <h3>Atendimento via WhatsApp</h3>
-                        <p>Dúvidas sobre entregas ou trocas?</p>
-                        <p>Nosso time de especialistas está pronto para te atender via WhatsApp.</p>
+                        <p>Dúvidas sobre entregas ou trocas? Nosso time está pronto para te atender.</p>
                         <a href="https://wa.me/5562985297017" target="_blank" class="btn-whatsapp">Iniciar Conversa</a>
                     </div>
-                    <div class="info-card">
-                        <h3>Segurança da Conta</h3>
-                        <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Altere a sua senha de login caso desejar.</p>
-                        <div class="info-list">
-                            <div class="info-item">
-                                <label>Nova Senha</label>
-                                <input type="password" id="new-password" placeholder="Mínimo 6 caracteres">
-                            </div>
-                            <div class="info-item">
-                                <label>Confirmar Nova Senha</label>
-                                <input type="password" id="confirm-password" placeholder="Repita a senha">
-                            </div>
-                            <button class="save-btn" onclick="changeUserPassword()" style="display:block; background: #000;">Atualizar Senha</button>
-                        </div>
-                    </div>
-
                 </section>
 
             </div>
         </main>
     </div>
 
-    <!-- Scripts -->
+    /* ============================================================
+       7. LOGICA DE INTERFACE (TABS E MODO EDIÇÃO)
+       ============================================================ */
     <script type="module" src="scripts/auth.js"></script>
     <script>
-        // Lógica de troca de abas
+        // Lógica de troca de abas da Sidebar
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const sectionId = btn.getAttribute('data-section');
@@ -171,16 +166,22 @@
             });
         });
 
-        // Alternar modo edição
+        // Alternar Modo Edição (Habilitar inputs e mostrar botão Salvar)
         function toggleEdit(type) {
             const section = document.getElementById('section-' + type);
             const inputs = section.querySelectorAll('input, select');
             const saveBtn = section.querySelector('.save-btn');
             const editBtn = section.querySelector('.edit-toggle');
 
+            // Verifica se o primeiro campo está desabilitado para alternar
             const isDisabled = inputs[0].disabled;
 
-            inputs.forEach(i => i.disabled = !isDisabled);
+            inputs.forEach(i => {
+                if (i.id !== 'edit-email') { // O email nunca deve ser editável por segurança
+                    i.disabled = !isDisabled;
+                }
+            });
+
             saveBtn.style.display = isDisabled ? 'block' : 'none';
             editBtn.innerText = isDisabled ? 'Cancelar' : 'Editar';
         }
