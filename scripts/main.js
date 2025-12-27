@@ -403,6 +403,29 @@ window.proceedToCheckout = () => {
     window.location.href = 'checkout.html';
 };
 
+/* --- FUNÇÃO DE TRANSIÇÃO PARA O CHECKOUT --- */
+window.iniciarFluxoCheckout = () => {
+    // 1. Bloqueia o avanço se o carrinho estiver vazio
+    if (!cart || cart.length === 0) {
+        alert("Adicione pelo menos um item ao carrinho para prosseguir.");
+        return;
+    }
+
+    // 2. Captura o horário de entrega (se selecionado)
+    const seletorHorario = document.querySelector('.time-selector');
+    if (seletorHorario && seletorHorario.value) {
+        localStorage.setItem('medferpa_selected_time', seletorHorario.value);
+    }
+
+    // 3. SINCRONIZAÇÃO CRÍTICA: Salva o estado real do carrinho
+    // Isso garante que o Checkout.js leia exatamente os preços e quantidades atuais
+    localStorage.setItem('medferpa_cart', JSON.stringify(cart));
+
+    // 4. Redirecionamento
+    console.log("💳 Dados sincronizados. Redirecionando para o sistema de pagamento...");
+    window.location.href = 'checkout.html';
+};
+
 // Chame o loadCart dentro do seu DOMContentLoaded original
 document.addEventListener('DOMContentLoaded', () => {
     loadCart(); // <--- Adicione esta linha aqui
