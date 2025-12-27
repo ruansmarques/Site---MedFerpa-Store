@@ -1,11 +1,14 @@
 /**
  * SISTEMA DE AUTENTICAÇÃO E GESTÃO DE DADOS - MEDFERPA STORE
- * Versão: v.107 - Cloud Sync Final
+ * Versão: v.108 - Gestão de Pedidos e Histórico
  * 
- * Integração: Firebase Auth + Firestore (Banco de Dados)
- * Funcionalidade: Login, Cadastro e Sincronização de Perfil/Pedidos na Nuvem.
+ * Integração: Firebase Auth + Firestore
+ * Funcionalidade: Login, Cadastro, Perfil e Controle de Histórico de Pedidos.
  */
 
+/* ============================================================
+   1. IMPORTAÇÕES (TODAS NO TOPO)
+   ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
     getAuth, 
@@ -18,12 +21,12 @@ import {
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// Importações do Firestore para persistência definitiva
 import { 
     getFirestore, 
     doc, 
     setDoc, 
     getDoc,
+    updateDoc,
     collection,
     query,
     where,
@@ -32,7 +35,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* ============================================================
-   1. CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE
+   2. CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE
    ============================================================ */
 const firebaseConfig = {
     apiKey: "AIzaSyBgYUAagQzShLLAddybvinAYP17inZkYNg",
@@ -52,7 +55,7 @@ const googleProvider = new GoogleAuthProvider();
 let isLoginMode = true;
 
 /* ============================================================
-   2. MONITOR DE SESSÃO (SINCRONIZAÇÃO DE HEADER E ACESSO)
+   3. MONITOR DE SESSÃO (HEADER E DASHBOARD)
    ============================================================ */
 onAuthStateChanged(auth, async (user) => {
     const userIcon = document.getElementById('user-icon-header');
@@ -66,7 +69,6 @@ onAuthStateChanged(auth, async (user) => {
             userIcon.style.border = "2px solid #000";
         }
 
-        // Se estiver no Dashboard, carrega dados do Firestore
         if (window.location.pathname.includes('dashboard.html')) {
             loadUserData(user);
             renderUserOrders(user);
@@ -82,7 +84,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 /* ============================================================
-   3. GESTÃO DE DADOS DO USUÁRIO (PERFIL E ENDEREÇO NO FIRESTORE)
+   4. GESTÃO DE DADOS DO USUÁRIO (PERFIL E ENDEREÇO)
    ============================================================ */
 async function loadUserData(user) {
     const dashName = document.getElementById('dash-user-name');
@@ -91,34 +93,29 @@ async function loadUserData(user) {
     const editName = document.getElementById('edit-name');
     const editEmail = document.getElementById('edit-email');
 
-    // Preenchimento básico
     if (dashName) dashName.innerText = user.displayName || user.email.split('@')[0];
     if (dashEmail) dashEmail.innerText = user.email;
     if (dashImg && user.photoURL) dashImg.src = user.photoURL;
     if (editName) editName.value = user.displayName || "";
     if (editEmail) editEmail.value = user.email;
 
-    // Busca dados complementares no Banco de Dados Cloud
     try {
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
             const data = docSnap.data();
-            // Perfil
             if (document.getElementById('edit-gender')) document.getElementById('edit-gender').value = data.gender || "não informado";
             if (document.getElementById('edit-phone')) document.getElementById('edit-phone').value = data.phone || "";
-            // Endereço
             if (document.getElementById('addr-cep')) document.getElementById('addr-cep').value = data.address?.cep || "";
             if (document.getElementById('addr-bairro')) document.getElementById('addr-bairro').value = data.address?.bairro || "";
             if (document.getElementById('addr-rua')) document.getElementById('addr-rua').value = data.address?.rua || "";
             if (document.getElementById('addr-num')) document.getElementById('addr-num').value = data.address?.num || "";
             if (document.getElementById('addr-comp')) document.getElementById('addr-comp').value = data.address?.comp || "";
         }
-    } catch (e) { console.error("Erro ao ler Firestore:", e); }
+    } catch (e) { console.error("Erro Firestore:", e); }
 }
 
-// Salvar Perfil no Firebase
 document.getElementById('save-profile')?.addEventListener('click', async () => {
     const user = auth.currentUser;
     if (!user) return alert("Você precisa estar logado!");
@@ -130,15 +127,11 @@ document.getElementById('save-profile')?.addEventListener('click', async () => {
     try {
         await updateProfile(user, { displayName: name });
         await setDoc(doc(db, "users", user.uid), { name, gender, phone }, { merge: true });
-        alert("Perfil atualizado na nuvem!");
+        alert("Perfil atualizado!");
         location.reload();
-    } catch (e) {
-        console.error("Erro detalhado:", e); // Alerta para aparecer no F12
-        alert("Erro ao salvar perfil: " + e.message);
-    }
+    } catch (e) { alert("Erro ao salvar perfil."); }
 });
 
-// Salvar Endereço no Firebase
 document.getElementById('save-address')?.addEventListener('click', async () => {
     const user = auth.currentUser;
     const address = {
@@ -156,39 +149,9 @@ document.getElementById('save-address')?.addEventListener('click', async () => {
     } catch (e) { alert("Erro ao salvar endereço."); }
 });
 
-// Renderizar Pedidos do Firestore
-async function renderUserOrders(user) {
-    const container = document.getElementById('active-orders-container');
-    if (!container) return;
-
-    try {
-        const q = query(collection(db, "orders"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-
-        if (snapshot.empty) {
-            container.innerHTML = `<p class="empty-msg">Nenhum pedido realizado.</p>`;
-            return;
-        }
-
-        container.innerHTML = snapshot.docs.map(doc => {
-            const o = doc.data();
-            const date = o.createdAt?.toDate().toLocaleDateString('pt-BR') || "Processando...";
-            return `
-                <div class="order-card-item" style="border: 1px solid #eee; padding: 20px; border-radius: 12px; margin-bottom: 15px; background: #fff;">
-                    <div style="display:flex; justify-content:space-between;">
-                        <strong style="color:#000;">Pedido #${o.orderNumber}</strong>
-                        <span style="font-size:11px; background:#e8f0fe; padding:4px 10px; border-radius:10px;">${o.status}</span>
-                    </div>
-                    <p style="font-size:13px; margin-top:10px;">Data: ${date} | Total: R$ ${o.total.toFixed(2).replace('.', ',')}</p>
-                </div>
-            `;
-        }).join('');
-    } catch (e) { console.error("Erro pedidos:", e); }
-}
-
-// Importação necessária do updateDoc para mudar o status do pedido
-import { updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+/* ============================================================
+   5. GESTÃO DE PEDIDOS E HISTÓRICO
+   ============================================================ */
 async function renderUserOrders(user) {
     const activeContainer = document.getElementById('active-orders-container');
     const historyContainer = document.getElementById('history-orders-container');
@@ -209,10 +172,9 @@ async function renderUserOrders(user) {
 
         snapshot.docs.forEach(docSnap => {
             const o = docSnap.data();
-            const orderId = docSnap.id; // ID do documento no Firebase para atualização
-            const date = o.createdAt?.toDate().toLocaleDateString('pt-BR') || "Processando...";
+            const orderId = docSnap.id;
+            const date = o.createdAt?.toDate().toLocaleDateString('pt-BR') || "Pendente";
             
-            // Template base do Card
             const cardTemplate = `
                 <div class="order-card-item">
                     <div class="order-card-header">
@@ -226,44 +188,32 @@ async function renderUserOrders(user) {
                     </div>
                     ${o.status !== 'Entregue' ? 
                         `<button class="btn-confirm-delivery" onclick="confirmDelivery('${orderId}')">Já recebi meu pedido</button>` : 
-                        `<div class="order-check-icon">✓ Pedido Entregue</div>`
+                        `<div class="order-check-icon" style="color:green; font-weight:bold; margin-top:10px;">✓ Pedido Entregue</div>`
                     }
                 </div>
             `;
 
-            // Separação por Status
-            if (o.status === "Entregue") {
-                historyHtml += cardTemplate;
-            } else {
-                activeHtml += cardTemplate;
-            }
+            if (o.status === "Entregue") historyHtml += cardTemplate;
+            else activeHtml += cardTemplate;
         });
 
-        // Injeção no HTML com validação de vazio
         activeContainer.innerHTML = activeHtml || `<p class="empty-msg">Suas compras para ser entregues aparecerão aqui.</p>`;
         historyContainer.innerHTML = historyHtml || `<p class="empty-msg">Nenhum pedido finalizado ainda.</p>`;
 
-    } catch (e) { console.error("Erro ao carregar pedidos:", e); }
+    } catch (e) { console.error("Erro pedidos:", e); }
 }
 
-// Função global para atualizar o status do pedido
 window.confirmDelivery = async (docId) => {
     if (!confirm("Confirmar o recebimento deste pedido?")) return;
-
     try {
-        const orderRef = doc(db, "orders", docId);
-        await updateDoc(orderRef, {
-            status: "Entregue"
-        });
+        await updateDoc(doc(db, "orders", docId), { status: "Entregue" });
         alert("Pedido movido para o histórico!");
-        location.reload(); // Recarrega para atualizar as listas
-    } catch (e) {
-        alert("Erro ao atualizar status. Tente novamente.");
-    }
+        location.reload();
+    } catch (e) { alert("Erro ao atualizar status."); }
 };
 
 /* ============================================================
-   4. AUTENTICAÇÃO (LOGIN, CADASTRO E SOCIAL)
+   6. AUTENTICAÇÃO (LOGIN E CADASTRO)
    ============================================================ */
 window.loginWithGoogle = async () => {
     try {
@@ -281,7 +231,7 @@ if (authForm) {
         const btn = document.getElementById('btn-auth-main');
 
         btn.disabled = true;
-        btn.innerText = "Processando...";
+        btn.innerText = "Aguarde...";
 
         try {
             if (isLoginMode) await signInWithEmailAndPassword(auth, email, pass);
@@ -290,6 +240,7 @@ if (authForm) {
         } catch (err) {
             alert("Erro: " + err.code);
             btn.disabled = false;
+            btn.innerText = isLoginMode ? "Entrar" : "Cadastrar Agora";
         }
     });
 }
@@ -297,7 +248,7 @@ if (authForm) {
 window.logoutUser = () => signOut(auth).then(() => window.location.href = "index.html");
 
 /* ============================================================
-   5. MODAIS E MÁSCARAS DE INTERFACE
+   7. INTERFACE E MODAIS
    ============================================================ */
 window.toggleAuthMode = () => {
     isLoginMode = !isLoginMode;
@@ -319,7 +270,6 @@ if (phoneInput) {
     });
 }
 
-// Modais de Política
 window.openModal = (type) => {
     const modal = document.getElementById('policy-modal');
     const text = document.getElementById('modal-text');
@@ -333,7 +283,6 @@ window.openModal = (type) => {
 
 window.closeModal = () => document.getElementById('policy-modal').style.display = 'none';
 
-// Inicialização de Listeners de interface
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-logout-dash')?.addEventListener('click', window.logoutUser);
     document.getElementById('btn-google-login')?.addEventListener('click', window.loginWithGoogle);
@@ -341,9 +290,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('open-privacy')?.addEventListener('click', () => window.openModal('privacy'));
     document.getElementById('open-terms')?.addEventListener('click', () => window.openModal('terms'));
     document.getElementById('close-modal')?.addEventListener('click', window.closeModal);
-    
-    // Fechar ao clicar fora
-    window.addEventListener('click', (e) => {
-        if (e.target.id === 'policy-modal') window.closeModal();
-    });
+    window.addEventListener('click', (e) => { if (e.target.id === 'policy-modal') window.closeModal(); });
 });
