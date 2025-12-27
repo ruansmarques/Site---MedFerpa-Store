@@ -115,7 +115,7 @@ function renderProducts(dataToRender) {
                     </div>
                 </div>
                 <div class="prod-info">
-                    <div class="error-msg">⚠️ Por favor, selecione um tamanho</div>
+                    <div class="error-msg">Por favor, selecione um tamanho!</div>
                     <h3>${product.name}</h3>
                     <p class="price">R$ ${product.price.toFixed(2).replace('.', ',')}</p>
                 </div>
