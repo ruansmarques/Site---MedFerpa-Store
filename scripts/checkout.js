@@ -1,15 +1,23 @@
 /**
  * LÓGICA DE CHECKOUT E PAGAMENTO - MEDFERPA STORE
- * Versão: v.105
+ * Versão: v.107 - Cloud Sync Final
  * 
- * Integração: Firebase Auth + Mercado Pago Bricks
- * Correção: Reinicialização segura do Brick de pagamento.
+ * Integração: Firebase Auth + Firebase Firestore + Mercado Pago Bricks
+ * Funcionalidade: Gravação de pedidos na nuvem e preenchimento inteligente.
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 1. CONFIGURAÇÃO FIREBASE
+/* ============================================================
+   1. CONFIGURAÇÃO FIREBASE E MERCADO PAGO
+   ============================================================ */
 const firebaseConfig = {
     apiKey: "AIzaSyBgYUAagQzShLLAddybvinAYP17inZkYNg",
     authDomain: "medferpa-store-1cd4d.firebaseapp.com",
@@ -22,13 +30,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-// 2. CONFIGURAÇÃO MERCADO PAGO
 const mp = new MercadoPago('APP_USR-786f2d55-857b-4ddf-9d4c-ff1d7a216ea4'); 
 const bricksBuilder = mp.bricks();
 
 let cart = JSON.parse(localStorage.getItem('medferpa_cart')) || [];
-let paymentBrickController = null; // Controlador para evitar duplicidade
+let paymentBrickController = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     if (cart.length === 0) {
@@ -40,9 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
     checkLoggedUser();
 });
 
-/**
- * Preenchimento automático de dados do usuário autenticado
- */
+/* ============================================================
+   2. MONITOR DE SESSÃO E PREENCHIMENTO AUTOMÁTICO
+   ============================================================ */
 function checkLoggedUser() {
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -51,14 +59,13 @@ function checkLoggedUser() {
             document.getElementById('cus-name').value = nameParts[0];
             document.getElementById('cus-surname').value = nameParts.slice(1).join(' ');
             
-            // Busca endereço salvo no UID do usuário
+            // Busca endereço salvo localmente ou futuramente do Firestore
             const savedAddr = JSON.parse(localStorage.getItem(`user_addr_${user.uid}`));
             if (savedAddr) {
                 document.getElementById('ship-cep').value = savedAddr.cep || "";
                 document.getElementById('ship-street').value = savedAddr.rua || "";
                 document.getElementById('ship-number').value = savedAddr.num || "";
                 document.getElementById('ship-bairro').value = savedAddr.bairro || "";
-                // Preenchimento de Cidade/UF se existirem nos campos
                 if(document.getElementById('ship-city')) document.getElementById('ship-city').value = savedAddr.city || "";
                 if(document.getElementById('ship-state')) document.getElementById('ship-state').value = savedAddr.state || "";
             }
@@ -66,11 +73,10 @@ function checkLoggedUser() {
     });
 }
 
-/**
- * Controle de Navegação entre Etapas
- */
+/* ============================================================
+   3. CONTROLE DE NAVEGAÇÃO (ETAPAS DO CHECKOUT)
+   ============================================================ */
 window.goToStep = (step) => {
-    // Validação simples de transição
     if (step === 2) {
         if (!document.getElementById('cus-email').value || !document.getElementById('cus-name').value) {
             return alert("Preencha seus dados de identificação.");
@@ -81,11 +87,9 @@ window.goToStep = (step) => {
         if (!document.getElementById('ship-cep').value || !document.getElementById('ship-street').value) {
             return alert("Preencha o endereço de entrega.");
         }
-        // Inicializa pagamento
         initMercadoPagoBrick();
     }
 
-    // Toggle Visual
     document.querySelectorAll('.form-card').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     
@@ -94,9 +98,9 @@ window.goToStep = (step) => {
     window.scrollTo(0, 0);
 };
 
-/**
- * Renderiza Resumo Lateral
- */
+/* ============================================================
+   4. RESUMO DO PEDIDO (INTERFACE DO USUÁRIO)
+   ============================================================ */
 function renderSummary() {
     const list = document.getElementById('summary-items-list');
     let total = 0;
@@ -117,11 +121,10 @@ function renderSummary() {
     document.getElementById('sum-total').innerText = formattedTotal;
 }
 
-/**
- * Inicialização Segura do Mercado Pago Bricks
- */
+/* ============================================================
+   5. INTEGRAÇÃO MERCADO PAGO BRICKS
+   ============================================================ */
 async function initMercadoPagoBrick() {
-    // Se o controlador já existe, não reinicializamos para evitar bugs de DOM
     if (paymentBrickController) return;
 
     const totalAmount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -157,32 +160,37 @@ async function initMercadoPagoBrick() {
     paymentBrickController = await bricksBuilder.create('payment', 'paymentBrick_container', settings);
 }
 
-/**
- * Finalização e Gravação do Pedido
- */
-function finishOrder(totalValue) {
-    const now = new Date();
+/* ============================================================
+   6. FINALIZAÇÃO DO PEDIDO (CLOUD SYNC FIRESTORE)
+   ============================================================ */
+async function finishOrder(totalValue) {
+    const user = auth.currentUser;
     const orderId = Math.floor(100000 + Math.random() * 900000);
     
-    const newOrder = {
-        id: orderId,
-        date: now.toLocaleDateString('pt-BR'),
-        deliveryEstimate: "2 a 4 dias úteis",
-        timeSlot: localStorage.getItem('medferpa_selected_time') || "Horário Comercial",
-        total: `R$ ${totalValue.toFixed(2).replace('.', ',')}`,
+    // Preparação do objeto para o banco de dados
+    const orderData = {
+        orderNumber: orderId,
+        userId: user ? user.uid : "guest",
+        customerEmail: document.getElementById('cus-email').value,
+        customerName: document.getElementById('cus-name').value + " " + document.getElementById('cus-surname').value,
+        total: totalValue,
         status: "Pagamento Aprovado",
-        items: cart.map(i => `${i.quantity}x ${i.name} (${i.size})`).join(', ')
+        createdAt: serverTimestamp(), // Data sincronizada com o servidor do Firebase
+        items: cart, // Salva os detalhes completos do carrinho
+        timeSlot: localStorage.getItem('medferpa_selected_time') || "Horário Comercial"
     };
 
-    // Salva no histórico do usuário logado se houver, ou global
-    const user = auth.currentUser;
-    const storageKey = user ? `orders_${user.uid}` : 'medferpa_orders_guest';
-    
-    let orders = JSON.parse(localStorage.getItem(storageKey)) || [];
-    orders.push(newOrder);
-    localStorage.setItem(storageKey, JSON.stringify(orders));
-
-    // Limpa carrinho e finaliza
-    localStorage.removeItem('medferpa_cart');
-    window.location.href = "dashboard.html?order=success";
+    try {
+        // Gravação na coleção "orders" do Firestore
+        await addDoc(collection(db, "orders"), orderData);
+        
+        // Limpeza dos dados temporários locais
+        localStorage.removeItem('medferpa_cart');
+        
+        // Redirecionamento para o dashboard com sinal de sucesso
+        window.location.href = "dashboard.html?order=success";
+    } catch (error) {
+        console.error("Erro ao salvar pedido no Firestore:", error);
+        alert("Erro ao salvar seu pedido na nuvem. Verifique sua conexão.");
+    }
 }
