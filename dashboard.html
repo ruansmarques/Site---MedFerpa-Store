@@ -70,12 +70,12 @@
                                 <input type="text" id="edit-name" value="..." disabled>
                             </div>
                             <div class="info-item">
-                                <label>E-mail</label>
-                                <input type="email" id="edit-email" value="..." disabled>
+                                <label>E-mail (Login)</label>
+                                <input type="email" id="edit-email" value="..." readonly style="color: #999; cursor: not-allowed;">
                             </div>
                             <div class="info-item">
                                 <label>Gênero</label>
-                                <select id="edit-gender" disabled>
+                                <select id="edit-gender">
                                     <option value="não informado">Não informado</option>
                                     <option value="masculino">Masculino</option>
                                     <option value="feminino">Feminino</option>
@@ -113,11 +113,11 @@
                             <button class="edit-toggle" onclick="toggleEdit('address')">Editar</button>
                         </div>
                         <div class="info-list">
-                            <div class="info-item"><label>CEP</label><input type="text" id="addr-cep" value="00000-000" disabled></div>
-                            <div class="info-item"><label>Bairro</label><input type="text" id="addr-bairro" value="..." disabled></div>
-                            <div class="info-item"><label>Rua/Avenida</label><input type="text" id="addr-rua" value="..." disabled></div>
-                            <div class="info-item"><label>Número</label><input type="text" id="addr-num" value="S/N" disabled></div>
-                            <div class="info-item"><label>Complemento</label><input type="text" id="addr-comp" value="-" disabled></div>
+                            <div class="info-item"><label>CEP</label><input type="text" id="addr-cep" value="00000-000"></div>
+                            <div class="info-item"><label>Bairro</label><input type="text" id="addr-bairro" value="..."></div>
+                            <div class="info-item"><label>Rua/Avenida</label><input type="text" id="addr-rua" value="..."></div>
+                            <div class="info-item"><label>Número</label><input type="text" id="addr-num" value="S/N"></div>
+                            <div class="info-item"><label>Complemento</label><input type="text" id="addr-comp" value="-"></div>
                             <button class="save-btn" id="save-address" style="display:none">Salvar Endereço</button>
                         </div>
                     </div>
@@ -130,6 +130,32 @@
                         <h3>Precisa de ajuda?</h3>
                         <p>Nosso time de especialistas está pronto para te atender via WhatsApp.</p>
                         <a href="https://wa.me/5562985160533" target="_blank" class="btn-whatsapp">Falar no WhatsApp</a>
+                    </div>
+                </section>
+                
+                <!-- 4. SUPORTE E SEGURANÇA -->
+                <section id="section-support" class="content-section">
+                    <div class="info-card">
+                        <h3>Segurança da Conta</h3>
+                        <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Mantenha sua conta segura alterando sua senha periodicamente.</p>
+                        <div class="info-list">
+                            <div class="info-item">
+                                <label>Nova Senha</label>
+                                <input type="password" id="new-password" placeholder="Mínimo 6 caracteres">
+                            </div>
+                            <div class="info-item">
+                                <label>Confirmar Nova Senha</label>
+                                <input type="password" id="confirm-password" placeholder="Repita a senha">
+                            </div>
+                            <button class="save-btn" onclick="changeUserPassword()" style="display:block; background: #000;">Atualizar Senha</button>
+                        </div>
+                    </div>
+
+                    <div class="info-card support-card" style="margin-top: 20px;">
+                        <img src="https://www.svgrepo.com/show/497636/whatsapp.svg" width="40">
+                        <h3>Atendimento via WhatsApp</h3>
+                        <p>Dúvidas sobre entregas ou trocas?</p>
+                        <a href="https://wa.me/5562985160533" target="_blank" class="btn-whatsapp">Iniciar Conversa</a>
                     </div>
                 </section>
 

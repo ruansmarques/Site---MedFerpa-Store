@@ -6,6 +6,8 @@ import {
     signInWithPopup,
     GoogleAuthProvider,
     onAuthStateChanged, 
+    updateProfile, 
+    updatePassword, 
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -110,6 +112,7 @@ function initEvents() {
     document.getElementById('close-modal')?.addEventListener('click', closeModal);
 }
 
+// --- 1. FOTO DE PERFIL DO USUÁRIO NO DASHBOARD ---
 onAuthStateChanged(auth, (user) => {
     const userIcon = document.getElementById('user-icon-header');
     const userLink = document.getElementById('user-link-header');
@@ -130,7 +133,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// --- DADOS DO USUÁRIO NO DASHBOARD ---
+// --- 1. DADOS DO USUÁRIO NO DASHBOARD ---
 onAuthStateChanged(auth, (user) => {
     if (user && window.location.pathname.includes('dashboard.html')) {
         // Preenche Nome e Email no Header do Dash
@@ -147,6 +150,75 @@ onAuthStateChanged(auth, (user) => {
         if(dashImg && user.photoURL) dashImg.src = user.photoURL;
     }
 });
+
+// --- 2. UPLOAD DE FOTO DE PERFIL ---
+const uploadInput = document.getElementById('upload-photo');
+const dashImg = document.getElementById('dash-user-img');
+
+if (uploadInput) {
+    uploadInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const base64Image = event.target.result;
+                // Atualiza visualmente na hora
+                if(dashImg) dashImg.src = base64Image;
+                
+                // Salva no perfil do Firebase (URL)
+                try {
+                    await updateProfile(auth.currentUser, { photoURL: base64Image });
+                    alert("Foto de perfil atualizada!");
+                } catch (error) {
+                    console.error("Erro ao salvar foto:", error);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+// --- 3. SAIR DA CONTA ---
+const btnLogoutDash = document.getElementById('btn-logout-dash');
+if (btnLogoutDash) {
+    btnLogoutDash.addEventListener('click', () => {
+        signOut(auth).then(() => {
+            window.location.href = "index.html"; // Redireciona para Home
+        });
+    });
+}
+
+// --- 4. FORMATAÇÃO DE TELEFONE (PADRÃO BR) ---
+const phoneInput = document.getElementById('edit-phone');
+if (phoneInput) {
+    phoneInput.addEventListener('input', (e) => {
+        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+        e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+    });
+}
+
+// --- 5. ALTERAR SENHA ---
+window.changeUserPassword = async () => {
+    const newPass = document.getElementById('new-password').value;
+    const confirmPass = document.getElementById('confirm-password').value;
+
+    if (newPass.length < 6) return alert("A senha deve ter no mínimo 6 caracteres.");
+    if (newPass !== confirmPass) return alert("As senhas não coincidem.");
+
+    try {
+        await updatePassword(auth.currentUser, newPass);
+        alert("Senha atualizada com sucesso!");
+        document.getElementById('new-password').value = "";
+        document.getElementById('confirm-password').value = "";
+    } catch (error) {
+        if (error.code === 'auth/requires-recent-login') {
+            alert("Para sua segurança, faça login novamente antes de alterar a senha.");
+            signOut(auth).then(() => window.location.href = "login.html");
+        } else {
+            alert("Erro ao atualizar senha: " + error.message);
+        }
+    }
+};
 
 // --- AUXILIARES ---
 function openModal(type) {
