@@ -377,6 +377,32 @@ function loadCart() {
     }
 }
 
+/* --- FUNÇÃO PARA REDIRECIONAR AO CHECKOUT --- */
+window.proceedToCheckout = () => {
+    // 1. Verifica se o carrinho tem itens
+    if (cart.length === 0) {
+        alert("Seu carrinho está vazio! Adicione produtos antes de finalizar.");
+        return;
+    }
+
+    // 2. Captura o horário de entrega selecionado (se houver)
+    const timeSelector = document.querySelector('.time-selector');
+    if (timeSelector && timeSelector.value) {
+        localStorage.setItem('selected_delivery_time', timeSelector.value);
+    } else {
+        // Opcional: Obrigar a escolher horário
+        // alert("Por favor, selecione um horário de entrega.");
+        // return;
+    }
+
+    // 3. Salva o carrinho atualizado uma última vez por segurança
+    localStorage.setItem('medferpa_cart', JSON.stringify(cart));
+
+    // 4. Redireciona para a página de checkout linear
+    console.log("🚀 Redirecionando para o Checkout...");
+    window.location.href = 'checkout.html';
+};
+
 // Chame o loadCart dentro do seu DOMContentLoaded original
 document.addEventListener('DOMContentLoaded', () => {
     loadCart(); // <--- Adicione esta linha aqui
