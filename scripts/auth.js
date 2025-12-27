@@ -155,13 +155,23 @@ document.getElementById('save-address')?.addEventListener('click', async () => {
 async function renderUserOrders(user) {
     const activeContainer = document.getElementById('active-orders-container');
     const historyContainer = document.getElementById('history-orders-container');
+    
     if (!activeContainer || !historyContainer) return;
 
     try {
-        const q = query(collection(db, "orders"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+        console.log("Buscando pedidos para o usuário:", user.uid);
+        
+        // Consulta ao Firestore
+        const q = query(
+            collection(db, "orders"), 
+            where("userId", "==", user.uid), 
+            orderBy("createdAt", "desc")
+        );
+        
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
+            console.log("Nenhum pedido encontrado no banco.");
             activeContainer.innerHTML = `<p class="empty-msg">Suas compras para ser entregues aparecerão aqui.</p>`;
             historyContainer.innerHTML = `<p class="empty-msg">Você ainda não possui histórico de compras.</p>`;
             return;
@@ -173,22 +183,27 @@ async function renderUserOrders(user) {
         snapshot.docs.forEach(docSnap => {
             const o = docSnap.data();
             const orderId = docSnap.id;
-            const date = o.createdAt?.toDate().toLocaleDateString('pt-BR') || "Pendente";
+            
+            // Tratamento de segurança para data e itens
+            const date = o.createdAt ? o.createdAt.toDate().toLocaleDateString('pt-BR') : "Processando...";
+            const itemsList = o.items && Array.isArray(o.items) 
+                ? o.items.map(i => `${i.quantity}x ${i.name}`).join(', ') 
+                : "Itens não identificados";
             
             const cardTemplate = `
                 <div class="order-card-item">
                     <div class="order-card-header">
-                        <strong>Pedido #${o.orderNumber}</strong>
+                        <strong>Pedido #${o.orderNumber || '---'}</strong>
                         <span class="status-badge ${o.status === 'Entregue' ? 'status-delivered' : 'status-pending'}">${o.status}</span>
                     </div>
                     <div class="order-card-body">
                         <p><strong>Data:</strong> ${date}</p>
-                        <p><strong>Total:</strong> R$ ${o.total.toFixed(2).replace('.', ',')}</p>
-                        <p class="order-items-list">${o.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</p>
+                        <p><strong>Total:</strong> R$ ${o.total ? o.total.toFixed(2).replace('.', ',') : '0,00'}</p>
+                        <p class="order-items-list" style="color: #666; font-size: 12px; margin-top: 8px;">${itemsList}</p>
                     </div>
                     ${o.status !== 'Entregue' ? 
                         `<button class="btn-confirm-delivery" onclick="confirmDelivery('${orderId}')">Já recebi meu pedido</button>` : 
-                        `<div class="order-check-icon" style="color:green; font-weight:bold; margin-top:10px;">✓ Pedido Entregue</div>`
+                        `<div class="order-check-icon" style="color:green; font-weight:bold; margin-top:10px; font-size: 13px;">✓ Pedido Entregue</div>`
                     }
                 </div>
             `;
@@ -200,7 +215,10 @@ async function renderUserOrders(user) {
         activeContainer.innerHTML = activeHtml || `<p class="empty-msg">Suas compras para ser entregues aparecerão aqui.</p>`;
         historyContainer.innerHTML = historyHtml || `<p class="empty-msg">Nenhum pedido finalizado ainda.</p>`;
 
-    } catch (e) { console.error("Erro pedidos:", e); }
+    } catch (e) { 
+        console.error("Erro crítico ao carregar pedidos:", e);
+        // Se o erro no console disser "The query requires an index", você DEVE clicar no link que o Firebase fornece.
+    }
 }
 
 window.confirmDelivery = async (docId) => {
