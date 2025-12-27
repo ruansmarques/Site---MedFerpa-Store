@@ -4,22 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sua Loja | MedFerpa Store</title>
+    <!-- Estilos Globais e Específicos -->
     <link rel="stylesheet" href="styles/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- OVERLAY PARA O CARRINHO -->
-    <div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+    <!-- OVERLAY PARA O CARRINHO E MENU MOBILE -->
+    <div class="cart-overlay" id="cart-overlay" onclick="closeAllDrawers()"></div>
 
-    <!-- MENU / HEADER -->
+    <!-- CABEÇALHO PRINCIPAL -->
     <header class="header">
         <div class="container header-grid">
+            
+            <!-- MENU HAMBÚRGUER (MOBILE) -->
+            <div class="menu-mobile-trigger" onclick="toggleMenuMobile()" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <!-- LOGO CENTRAL/ESQUERDA -->
             <div class="header-logo">
-                <img src="assets/logo.svg" alt="Logo">
+                <a href="index.html">
+                    <img src="assets/logo.svg" alt="MedFerpa Logo">
+                </a>
             </div>
             
-            <nav class="header-nav">
+            <!-- NAVEGAÇÃO DESKTOP -->
+            <nav class="header-nav" id="main-nav">
                 <ul>
                     <li><a href="#">PRESENTES</a></li>
                     <li><a href="#">KITS</a></li>
@@ -30,35 +43,38 @@
                 </ul>
             </nav>
 
+            <!-- ÍCONES DE AÇÃO -->
             <div class="header-icons">
-                <img src="assets/icon-help.svg" alt="Ajuda" class="icon">
-                <img src="assets/icon-search.svg" alt="Busca" class="icon">
-                <div class="cart-wrapper" onclick="toggleCart()" style="cursor:pointer">
+                <img src="assets/icon-search.svg" alt="Busca" class="icon" onclick="toggleSearch()">
+                
+                <div class="cart-wrapper" onclick="toggleCart()">
                     <img src="assets/icon-cart.svg" alt="Carrinho" class="icon">
                     <span class="cart-badge" id="global-cart-count">0</span>
                 </div>
-                <a href="login.html" id="user-link-header" style="text-decoration: none; display: flex; align-items: center;">
-                    <img src="assets/icon-user.svg" alt="Conta" class="icon" id="user-icon-header" style="cursor: pointer;">
+
+                <a href="login.html" id="user-link-header" class="user-link">
+                    <img src="assets/icon-user.svg" alt="Conta" class="icon" id="user-icon-header">
                 </a> 
             </div>
         </div>
     </header>
 
-    <!-- ÁREA DO BANNER DINÂMICO -->
+    <!-- BANNER DINÂMICO (HERO SLIDER) -->
     <section class="container hero-section">
         <div class="hero-slider" id="hero-slider">
             <div class="hero-slide active">
                 <picture>
                     <source media="(max-width: 768px)" srcset="assets/banner-mobile.jpg">
-                    <img src="assets/banner-desktop.jpg" alt="Campanha 1" class="hero-img">
+                    <img src="assets/banner-desktop.jpg" alt="Campanha Nova Coleção" class="hero-img">
                 </picture>
             </div>
             <div class="hero-slide">
                 <picture>
                     <source media="(max-width: 768px)" srcset="assets/banner2-mobile.jpg">
-                    <img src="assets/banner2-desktop.jpg" alt="Campanha 2" class="hero-img">
+                    <img src="assets/banner2-desktop.jpg" alt="Tecnologia Têxtil" class="hero-img">
                 </picture>
             </div>
+            <!-- Indicadores do Slider -->
             <div class="slider-dots" id="slider-dots">
                 <span class="dot active" onclick="goToSlide(0)"></span>
                 <span class="dot" onclick="goToSlide(1)"></span>
@@ -66,14 +82,15 @@
         </div>
     </section>
 
-    <!-- CONTEÚDO DA COLEÇÃO -->
+    <!-- ÁREA DE FILTROS E PRODUTOS -->
     <main class="container">
         <div class="collection-top-bar">
             <div class="titles">
-                <h2>ROUPAS MASCULINAS TECNOLÓGICAS</h2>
-                <p>Roupas essenciais não tem erro - é tecnologia que eleva o dia a dia.</p>
+                <h2>ROUPAS TECNOLÓGICAS</h2>
+                <p>Essenciais que elevam o seu dia a dia com performance.</p>
             </div>
             
+            <!-- Ordenação -->
             <div class="sort-wrapper">
                 <select id="sort-products" class="btn-sort">
                     <option value="default">ORDENAR POR</option>
@@ -84,79 +101,56 @@
         </div>
 
         <div class="collection-layout">
-            <!-- Sidebar Filtros -->
+            <!-- Sidebar de Filtros (Esquerda) -->
             <aside class="filters-sidebar">
-                <!-- FILTRO DE PREÇO MONETÁRIO -->
                 <div class="filter-block">
                     <h3>Preço Máximo</h3>
                     <input type="text" id="price-filter" placeholder="R$ 0,00" class="price-input-field">
                 </div>
 
-                <!-- FILTRO DE MODELO -->
                 <div class="filter-block">
                     <h3>Modelo</h3>
                     <label><input type="checkbox" class="filter-check" data-type="model" value="Camiseta"> Camiseta</label>
-                    <label><input type="checkbox" class="filter-check" data-type="model" value="Camisa"> Camisa</label>
-                    <label><input type="checkbox" class="filter-check" data-type="model" value="Body"> Body</label>
                     <label><input type="checkbox" class="filter-check" data-type="model" value="Calça"> Calça</label>
                     <label><input type="checkbox" class="filter-check" data-type="model" value="Acessórios"> Acessórios</label>
                 </div>
 
-                <!-- FILTRO DE TAMANHO -->
-                <div class="filter-block">
-                    <h3>Tamanho</h3>
-                    <label><input type="checkbox" class="filter-check" data-type="sizes" value="PP"> PP</label>
-                    <label><input type="checkbox" class="filter-check" data-type="sizes" value="P"> P</label>
-                    <label><input type="checkbox" class="filter-check" data-type="sizes" value="M"> M</label>
-                    <label><input type="checkbox" class="filter-check" data-type="sizes" value="G"> G</label>
-                    <label><input type="checkbox" class="filter-check" data-type="sizes" value="GG"> GG</label>
-                    <label><input type="checkbox" class="filter-check" data-type="sizes" value="40"> 40</label>
-                    <label><input type="checkbox" class="filter-check" data-type="sizes" value="42"> 42</label>
-                </div>
-
-                <!-- FILTRO DE COR -->
                 <div class="filter-block">
                     <h3>Cor</h3>
                     <label><input type="checkbox" class="filter-check" data-type="color" value="Preto"> Preto</label>
                     <label><input type="checkbox" class="filter-check" data-type="color" value="Branco"> Branco</label>
                     <label><input type="checkbox" class="filter-check" data-type="color" value="Azul"> Azul</label>
-                    <label><input type="checkbox" class="filter-check" data-type="color" value="Verde"> Verde</label>
-                    <label><input type="checkbox" class="filter-check" data-type="color" value="Cinza"> Cinza</label>
-                    <label><input type="checkbox" class="filter-check" data-type="color" value="Vermelho"> Vermelho</label>
-                    <label><input type="checkbox" class="filter-check" data-type="color" value="Areia"> Areia</label>
                 </div>
             </aside>
 
-            <!-- Vitrine de Produtos -->
-            <section class="products-grid" id="products-list"></section>
+            <!-- Vitrine de Produtos (Grid) -->
+            <section class="products-grid" id="products-list">
+                <!-- Conteúdo gerado dinamicamente pelo main.js -->
+            </section>
         </div>
     </main>
 
-    <!-- BARRA LATERAL DO CARRINHO (DRAWER) -->
+    <!-- DRAWER DO CARRINHO (DIREITA) -->
     <aside class="cart-sidebar" id="cart-sidebar">
         <div class="cart-header">
             <div class="cart-title">
                 <img src="assets/icon-cart.svg" alt="" width="20">
-                <span>CARRINHO</span>
+                <span>SEU CARRINHO</span>
             </div>
             <button class="btn-close-cart" onclick="toggleCart()">×</button>
         </div>
 
         <div class="cart-content" id="cart-items-container">
-            <p style="text-align:center; padding: 20px;">Seu carrinho está vazio.</p>
+            <!-- Itens do carrinho aparecem aqui -->
         </div>
 
         <div class="cart-footer">
             <div class="delivery-box">
-                <h4>ESCOLHA SEU HORÁRIO DE ENTREGA</h4>
+                <h4>HORÁRIO DE ENTREGA PREFERENCIAL</h4>
                 <select class="time-selector">
                     <option value="">Selecione um horário...</option>
-                    <option>das 08:40h às 08:50h</option>
-                    <option>das 10:30h às 10:50h</option>
-                    <option>das 12:30h às 13:00h</option>
-                    <option>das 14:50h às 15:00h</option>
-                    <option>das 16:40h às 17:00h</option>
-                    <option>das 18:40h às 19:00h</option>
+                    <option>08:00h - 12:00h</option>
+                    <option>13:00h - 18:00h</option>
                 </select>
             </div>
 
@@ -165,75 +159,67 @@
                     <span>SUBTOTAL</span>
                     <span id="cart-subtotal">R$ 0,00</span>
                 </div>
-                <button class="btn-checkout" onclick="iniciarFluxoCheckout()">FINALIZAR A COMPRA</button>
+                <button class="btn-checkout" onclick="iniciarFluxoCheckout()">FINALIZAR COMPRA</button>
                 <button class="btn-continue" onclick="toggleCart()">CONTINUAR COMPRANDO</button>
             </div>
         </div>
     </aside>
 
-    <!-- FAQ SECTION -->
+    <!-- SEÇÃO DE FAQ -->
     <section class="container faq-section">
-        <h2 class="section-title">Perguntas Frequentes</h2>
+        <h2 class="section-title">Dúvidas Frequentes</h2>
         <div class="faq-accordion">
             <div class="faq-item">
-                <button class="faq-question">Como encontrar o tamanho ideal? <span>+</span></button>
+                <button class="faq-question">As peças tecnológicas precisam ser passadas? <span>+</span></button>
                 <div class="faq-answer">
-                    <p>Consulte nossa tabela de medidas disponível em cada página de produto ou utilize nosso Provador Virtual para uma recomendação precisa baseada em sua altura e peso.</p>
+                    <p>Nossas peças são feitas com fibras que possuem alta memória elástica, desamassando no corpo com o calor da pele.</p>
                 </div>
             </div>
             <div class="faq-item">
-                <button class="faq-question">As roupas tecnológicas precisam ser passadas? <span>+</span></button>
+                <button class="faq-question">Qual o prazo para trocas? <span>+</span></button>
                 <div class="faq-answer">
-                    <p>Nossas peças são feitas com fibras que possuem alta memória elástica. Isso significa que elas desamassam naturalmente no corpo com o calor da pele, dispensando o uso de ferro em 95% dos casos.</p>
-                </div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">Qual o prazo de entrega? <span>+</span></button>
-                <div class="faq-answer">
-                    <p>O prazo varia de acordo com sua região. Você pode selecionar o horário específico de entrega diretamente no carrinho para maior conveniência.</p>
-                </div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">Como funciona a primeira troca? <span>+</span></button>
-                <div class="faq-answer">
-                    <p>A primeira troca é por nossa conta e pode ser realizada em até 30 dias após o recebimento do produto, desde que a etiqueta esteja fixada e a peça sem sinais de uso.</p>
+                    <p>A primeira troca é grátis e pode ser feita em até 30 dias após o recebimento.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- FOOTER -->
+    <!-- RODAPÉ -->
     <footer class="footer">
         <div class="container footer-grid">
             <div class="footer-col">
-                <img src="assets/logo-white.svg" alt="Logo" class="footer-logo">
-                <p>Peças essenciais para uma vida em movimento.</p>
+                <img src="assets/logo-white.svg" alt="Logo White" class="footer-logo">
+                <p>Performance e minimalismo para sua rotina.</p>
             </div>
             <div class="footer-col">
-                <h4>DÚVIDAS</h4>
+                <h4>AJUDA</h4>
                 <a href="#">Trocas e Devoluções</a>
-                <a href="#">FAQ</a>
-            </div>
-            <div class="footer-col">
-                <h4>SOBRE</h4>
-                <a href="#">Nossa Missão</a>
-                <a href="#">Tecnologia</a>
+                <a href="#">Rastrear Pedido</a>
             </div>
             <div class="footer-col newsletter">
-                <h4>NOVIDADES</h4>
-                <input type="tel" placeholder="Seu WhatsApp">
-                <button>CADASTRAR</button>
+                <h4>NEWSLETTER</h4>
+                <input type="email" placeholder="Seu melhor e-mail">
+                <button>INSCREVER</button>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2024 MedFerpa Store - CNPJ 26.520.188/0001-92</p>
+            <p>&copy; 2024 MedFerpa Store - Todos os direitos reservados.</p>
         </div>
     </footer>
 
+    <!-- Carregamento de Scripts -->
+    <!-- Importante: products.js deve vir antes de main.js -->
+    <script src="scripts/products.js"></script>
+    <script src="scripts/main.js"></script>
+    <script type="module" src="scripts/auth.js"></script>
 
-    <script src="scripts/products.js"></script>   <!-- Primeiro os dados dos produtos -->
-    <script src="scripts/main.js"></script>   <!-- Lógica da vitrine -->
-    <script type="module" src="scripts/auth.js"></script>   <!-- Por fim, a autenticação como módulo -->
-    
+    <script>
+        // Funções auxiliares de interface global
+        function closeAllDrawers() {
+            document.getElementById('cart-sidebar').classList.remove('active');
+            document.getElementById('cart-overlay').classList.remove('active');
+            // Fechar menu mobile se houver
+        }
+    </script>
 </body>
 </html>

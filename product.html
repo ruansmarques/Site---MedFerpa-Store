@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produto | MedFerpa Store</title>
+    <!-- CSS Global e Específico da Página -->
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/detail-product.css">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- OVERLAY PARA CARRINHO -->
+    <div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+
+    <!-- CABEÇALHO (Mantendo consistência com a Index) -->
+    <header class="header">
+        <div class="container header-grid">
+            <div class="header-logo">
+                <a href="index.html"><img src="assets/logo.svg" alt="Logo"></a>
+            </div>
+            <nav class="header-nav">
+                <ul>
+                    <li><a href="index.html">VOLTAR PARA A LOJA</a></li>
+                </ul>
+            </nav>
+            <div class="header-icons">
+                <div class="cart-wrapper" onclick="toggleCart()" style="cursor:pointer">
+                    <img src="assets/icon-cart.svg" alt="Carrinho" class="icon">
+                    <span class="cart-badge" id="global-cart-count">0</span>
+                </div>
+                <a href="login.html" id="user-link-header">
+                    <img src="assets/icon-user.svg" alt="Conta" class="icon" id="user-icon-header">
+                </a> 
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL DO PRODUTO -->
+    <main class="container product-detail-container">
+        
+        <!-- NAVEGAÇÃO BREADCRUMB -->
+        <nav class="breadcrumb">
+            <a href="index.html">Home</a> / <span id="breadcrumb-model">Categoria</span> / <strong id="breadcrumb-name">Produto</strong>
+        </nav>
+
+        <div class="product-grid">
+            
+            <!-- COLUNA ESQUERDA: GALERIA DE IMAGENS -->
+            <section class="product-gallery">
+                <div class="main-image-wrapper">
+                    <img src="" alt="Imagem Principal" id="main-product-img">
+                    <div class="badge-detail-container" id="detail-badges">
+                        <!-- Badges dinâmicas aqui -->
+                    </div>
+                </div>
+                <div class="thumbnails-grid" id="product-thumbnails">
+                    <!-- Miniaturas geradas pelo JS -->
+                </div>
+            </section>
+
+            <!-- COLUNA DIREITA: INFORMAÇÕES E COMPRA -->
+            <section class="product-info-sticky">
+                <h1 id="product-title">Carregando...</h1>
+                <p class="product-price" id="product-price">R$ 0,00</p>
+                <p class="installments">ou em até 12x de R$ 0,00</p>
+
+                <!-- Seleção de Cor -->
+                <div class="selector-block">
+                    <label>COR: <span id="selected-color-name">Selecione</span></label>
+                    <div class="swatches-detail" id="color-swatches">
+                        <!-- Cores geradas pelo JS -->
+                    </div>
+                </div>
+
+                <!-- Seleção de Tamanho -->
+                <div class="selector-block">
+                    <div class="label-row">
+                        <label>TAMANHO</label>
+                        <button class="btn-size-guide">Tabela de medidas</button>
+                    </div>
+                    <div class="size-options" id="size-options">
+                        <!-- Tamanhos gerados pelo JS -->
+                    </div>
+                    <p class="error-msg" id="size-error">Por favor, escolha um tamanho antes de comprar.</p>
+                </div>
+
+                <!-- Botão de Compra Principal -->
+                <button class="btn-add-to-cart-main" id="btn-buy-now">
+                    ADICIONAR AO CARRINHO
+                </button>
+
+                <!-- Benefícios Rápidos -->
+                <div class="shipping-info">
+                    <img src="https://www.svgrepo.com/show/506724/lock.svg" width="16">
+                    <span>Compra 100% segura e primeira troca grátis.</span>
+                </div>
+            </section>
+        </div>
+
+        <!-- SEÇÃO DE TECNOLOGIA E DESCRIÇÃO (Inspirado na Insider) -->
+        <section class="product-description-extra">
+            <div class="tech-features-grid" id="tech-features">
+                <!-- Diferenciais técnicos aqui -->
+            </div>
+
+            <div class="detailed-text">
+                <h3>SOBRE O PRODUTO</h3>
+                <p id="product-description-full">...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- BARRA LATERAL DO CARRINHO (Replicada para funcionalidade) -->
+    <aside class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <div class="cart-title"><span>CARRINHO</span></div>
+            <button class="btn-close-cart" onclick="toggleCart()">×</button>
+        </div>
+        <div class="cart-content" id="cart-items-container"></div>
+        <div class="cart-footer">
+            <div class="total-row">
+                <span>SUBTOTAL</span>
+                <span id="cart-subtotal">R$ 0,00</span>
+            </div>
+            <button class="btn-checkout" onclick="iniciarFluxoCheckout()">FINALIZAR COMPRA</button>
+        </div>
+    </aside>
+
+    <!-- SCRIPTS -->
+    <script src="scripts/products.js"></script> <!-- Dados -->
+    <script src="scripts/main.js"></script>     <!-- Carrinho e Header Global -->
+    <script src="scripts/product-detail.js"></script> <!-- Lógica desta página -->
+    <script type="module" src="scripts/auth.js"></script> <!-- Login -->
+
+</body>
+</html>
