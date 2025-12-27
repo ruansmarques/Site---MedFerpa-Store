@@ -7,7 +7,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 // 2. CONFIGURAÇÃO MERCADO PAGO
-const mp = new MercadoPago('APP_USR-7090875e-8557-41ec-9602-0e5445657805'); // SUBSTITUA PELA SUA PUBLIC KEY
+const mp = new MercadoPago('APP_USR-386af8ff-ec1b-4ea3-bfd9-91a7a8bbda13'); // SUBSTITUA PELA SUA PUBLIC KEY
 const bricksBuilder = mp.bricks();
 
 let cart = JSON.parse(localStorage.getItem('medferpa_cart')) || [];
@@ -55,6 +55,15 @@ function checkLoggedUser() {
             }
         }
     });
+}
+
+// Opcional: Obrigar login antes do checkout
+const valorTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+const userLogged = localStorage.getItem('user_logged'); // ou via Firebase
+if (!userLogged) {
+    alert("Por favor, faça login para finalizar sua compra.");
+    window.location.href = 'login.html';
+    return;
 }
 
 // --- RESUMO DO PEDIDO ---
