@@ -70,7 +70,7 @@ const productsData = [
         id: 5,
         slug: "sportee-shirt",
         name: "SPORTEE SHIRT",
-        price: 145.00,
+        price: 2.00,
         model: "Camiseta",
         badges: ["ANTIODOR"],
         description: "Desenvolvida para alta performance esportiva. Tecido ultra leve com rápida absorção de suor.",
