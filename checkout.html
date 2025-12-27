@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout Seguro | MedFerpa Store</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/checkout.css">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- SDK Mercado Pago -->
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+</head>
+<body>
+    <header class="checkout-header">
+        <div class="container header-flex">
+            <img src="assets/logo.svg" alt="Logo" class="logo-mini" onclick="window.location.href='index.html'">
+            <div class="checkout-steps">
+                <div class="step active" id="step-dot-1"><span>1</span> Identificação</div>
+                <div class="step" id="step-dot-2"><span>2</span> Entrega</div>
+                <div class="step" id="step-dot-3"><span>3</span> Pagamento</div>
+            </div>
+            <div class="secure-badge"><img src="https://www.svgrepo.com/show/497463/shield-check.svg" width="16"> Checkout Seguro</div>
+        </div>
+    </header>
+
+    <main class="container checkout-grid">
+        <!-- ÁREA DOS FORMULÁRIOS -->
+        <div class="checkout-forms-area">
+            
+            <!-- ETAPA 1: IDENTIFICAÇÃO -->
+            <section id="form-step-1" class="form-card active">
+                <h3>Dados Pessoais</h3>
+                <p class="step-desc">Utilizaremos seu e-mail para enviar as atualizações do pedido.</p>
+                <div class="input-group">
+                    <input type="email" id="cus-email" placeholder="E-mail" required>
+                    <div class="row">
+                        <input type="text" id="cus-name" placeholder="Nome" required>
+                        <input type="text" id="cus-surname" placeholder="Sobrenome" required>
+                    </div>
+                    <input type="text" id="cus-cpf" placeholder="CPF (Apenas números)" required>
+                </div>
+                <button class="btn-next" onclick="goToStep(2)">IR PARA A ENTREGA</button>
+            </section>
+
+            <!-- ETAPA 2: ENTREGA -->
+            <section id="form-step-2" class="form-card">
+                <h3>Endereço de Entrega</h3>
+                <div class="input-group">
+                    <input type="text" id="ship-cep" placeholder="CEP" required>
+                    <input type="text" id="ship-street" placeholder="Rua / Avenida" required>
+                    <div class="row">
+                        <input type="text" id="ship-number" placeholder="Número" required>
+                        <input type="text" id="ship-comp" placeholder="Complemento (Opcional)">
+                    </div>
+                    <input type="text" id="ship-bairro" placeholder="Bairro" required>
+                    <div class="row">
+                        <input type="text" id="ship-city" placeholder="Cidade" required>
+                        <input type="text" id="ship-state" placeholder="UF" required>
+                    </div>
+                </div>
+                <div class="nav-btns">
+                    <button class="btn-back" onclick="goToStep(1)">VOLTAR</button>
+                    <button class="btn-next" onclick="goToStep(3)">IR PARA O PAGAMENTO</button>
+                </div>
+            </section>
+
+            <!-- ETAPA 3: PAGAMENTO (MERCADO PAGO BRICKS) -->
+            <section id="form-step-3" class="form-card">
+                <h3>Pagamento</h3>
+                <p class="step-desc">Escolha como prefere pagar com segurança.</p>
+                <!-- Container onde o Mercado Pago vai injetar o Brick -->
+                <div id="paymentBrick_container"></div>
+                <button class="btn-back" onclick="goToStep(2)">VOLTAR PARA ENTREGA</button>
+            </section>
+
+        </div>
+
+        <!-- RESUMO DO PEDIDO -->
+        <aside class="checkout-summary">
+            <div class="summary-card">
+                <h4>Resumo do Pedido</h4>
+                <div id="summary-items-list"></div>
+                <div class="summary-totals">
+                    <div class="line"><span>Subtotal</span><span id="sum-subtotal">R$ 0,00</span></div>
+                    <div class="line"><span>Frete</span><span class="free-text">GRÁTIS</span></div>
+                    <div class="line total"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <script type="module" src="scripts/checkout.js"></script>
+</body>
+</html>
