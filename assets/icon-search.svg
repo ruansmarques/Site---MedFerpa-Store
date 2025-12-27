@@ -1,16 +1,4 @@
-<?xml version="1.0" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
- "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
- width="60.000000pt" height="60.000000pt" viewBox="0 0 60.000000 60.000000"
- preserveAspectRatio="xMidYMid meet">
-
-<g transform="translate(0.000000,60.000000) scale(0.100000,-0.100000)"
-fill="#000000" stroke="none">
-<path d="M207 516 c-50 -18 -76 -42 -98 -91 -24 -52 -24 -89 2 -142 39 -81
-143 -116 226 -77 l34 17 63 -62 c60 -59 86 -74 86 -49 0 7 -28 40 -61 74 l-62
-63 17 34 c32 70 17 144 -41 199 -50 48 -98 58 -166 34z m124 -43 c30 -18 69
--85 69 -119 0 -10 -10 -37 -23 -59 -69 -123 -247 -75 -247 67 1 98 115 161
-201 111z"/>
-</g>
+<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M4 11C4 7.13401 7.13401 4 11 4C14.866 4 18 7.13401 18 11C18 14.866 14.866 18 11 18C7.13401 18 4 14.866 4 11ZM11 2C6.02944 2 2 6.02944 2 11C2 15.9706 6.02944 20 11 20C13.125 20 15.078 19.2635 16.6177 18.0319L20.2929 21.7071C20.6834 22.0976 21.3166 22.0976 21.7071 21.7071C22.0976 21.3166 22.0976 20.6834 21.7071 20.2929L18.0319 16.6177C19.2635 15.078 20 13.125 20 11C20 6.02944 15.9706 2 11 2Z" fill="#000000"/>
 </svg>
