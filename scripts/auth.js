@@ -121,6 +121,8 @@ async function loadUserData(user) {
 // Salvar Perfil no Firebase
 document.getElementById('save-profile')?.addEventListener('click', async () => {
     const user = auth.currentUser;
+    if (!user) return alert("Você precisa estar logado!");
+
     const name = document.getElementById('edit-name').value;
     const gender = document.getElementById('edit-gender').value;
     const phone = document.getElementById('edit-phone').value;
@@ -130,7 +132,10 @@ document.getElementById('save-profile')?.addEventListener('click', async () => {
         await setDoc(doc(db, "users", user.uid), { name, gender, phone }, { merge: true });
         alert("Perfil atualizado na nuvem!");
         location.reload();
-    } catch (e) { alert("Erro ao salvar perfil."); }
+    } catch (e) {
+        console.error("Erro detalhado:", e); // Alerta para aparecer no F12
+        alert("Erro ao salvar perfil: " + e.message);
+    }
 });
 
 // Salvar Endereço no Firebase
@@ -180,6 +185,82 @@ async function renderUserOrders(user) {
         }).join('');
     } catch (e) { console.error("Erro pedidos:", e); }
 }
+
+// Importação necessária do updateDoc para mudar o status do pedido
+import { updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+async function renderUserOrders(user) {
+    const activeContainer = document.getElementById('active-orders-container');
+    const historyContainer = document.getElementById('history-orders-container');
+    if (!activeContainer || !historyContainer) return;
+
+    try {
+        const q = query(collection(db, "orders"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            activeContainer.innerHTML = `<p class="empty-msg">Suas compras para ser entregues aparecerão aqui.</p>`;
+            historyContainer.innerHTML = `<p class="empty-msg">Você ainda não possui histórico de compras.</p>`;
+            return;
+        }
+
+        let activeHtml = "";
+        let historyHtml = "";
+
+        snapshot.docs.forEach(docSnap => {
+            const o = docSnap.data();
+            const orderId = docSnap.id; // ID do documento no Firebase para atualização
+            const date = o.createdAt?.toDate().toLocaleDateString('pt-BR') || "Processando...";
+            
+            // Template base do Card
+            const cardTemplate = `
+                <div class="order-card-item">
+                    <div class="order-card-header">
+                        <strong>Pedido #${o.orderNumber}</strong>
+                        <span class="status-badge ${o.status === 'Entregue' ? 'status-delivered' : 'status-pending'}">${o.status}</span>
+                    </div>
+                    <div class="order-card-body">
+                        <p><strong>Data:</strong> ${date}</p>
+                        <p><strong>Total:</strong> R$ ${o.total.toFixed(2).replace('.', ',')}</p>
+                        <p class="order-items-list">${o.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}</p>
+                    </div>
+                    ${o.status !== 'Entregue' ? 
+                        `<button class="btn-confirm-delivery" onclick="confirmDelivery('${orderId}')">Já recebi meu pedido</button>` : 
+                        `<div class="order-check-icon">✓ Pedido Entregue</div>`
+                    }
+                </div>
+            `;
+
+            // Separação por Status
+            if (o.status === "Entregue") {
+                historyHtml += cardTemplate;
+            } else {
+                activeHtml += cardTemplate;
+            }
+        });
+
+        // Injeção no HTML com validação de vazio
+        activeContainer.innerHTML = activeHtml || `<p class="empty-msg">Suas compras para ser entregues aparecerão aqui.</p>`;
+        historyContainer.innerHTML = historyHtml || `<p class="empty-msg">Nenhum pedido finalizado ainda.</p>`;
+
+    } catch (e) { console.error("Erro ao carregar pedidos:", e); }
+}
+
+// Função global para atualizar o status do pedido
+window.confirmDelivery = async (docId) => {
+    if (!confirm("Confirmar o recebimento deste pedido?")) return;
+
+    try {
+        const orderRef = doc(db, "orders", docId);
+        await updateDoc(orderRef, {
+            status: "Entregue"
+        });
+        alert("Pedido movido para o histórico!");
+        location.reload(); // Recarrega para atualizar as listas
+    } catch (e) {
+        alert("Erro ao atualizar status. Tente novamente.");
+    }
+};
 
 /* ============================================================
    4. AUTENTICAÇÃO (LOGIN, CADASTRO E SOCIAL)

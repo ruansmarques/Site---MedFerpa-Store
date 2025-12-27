@@ -190,7 +190,7 @@ async function finishOrder(totalValue) {
         // Redirecionamento para o dashboard com sinal de sucesso
         window.location.href = "dashboard.html?order=success";
     } catch (error) {
-        console.error("Erro ao salvar pedido no Firestore:", error);
-        alert("Erro ao salvar seu pedido na nuvem. Verifique sua conexão.");
+        console.error("Erro ao salvar pedido no Banco de dados:", error);
+        alert("Erro ao salvar seu pedido na nuvem. Verifique sua conexão." + error.message);
     }
 }
