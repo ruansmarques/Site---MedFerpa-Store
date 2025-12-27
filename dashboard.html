@@ -4,62 +4,168 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minha Conta | MedFerpa Store</title>
-    <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/dashboard.css">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header class="header">
-        <div class="container header-grid">
-            <div class="header-logo"><img src="assets/logo.svg" alt="Logo" onclick="window.location.href='index.html'" style="cursor:pointer"></div>
-            <div class="header-icons"><button id="btn-logout" class="btn-logout">Sair da Conta</button></div>
-        </div>
-    </header>
 
-    <main class="container dashboard-layout">
-        <aside class="dashboard-sidebar">
-            <div class="user-info-side">
-                <img src="assets/icon-user.svg" id="dash-user-img">
-                <h2 id="dash-user-name">Carregando...</h2>
+    <div class="dashboard-container">
+        <!-- BARRA LATERAL -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="assets/logo.svg" alt="MedFerpa" onclick="window.location.href='index.html'">
             </div>
-            <nav class="dash-nav">
-                <button class="dash-btn active" onclick="switchDash('profile')">Meu perfil</button>
-                <button class="dash-btn" onclick="switchDash('orders')">Meus pedidos</button>
-                <button class="dash-btn" onclick="switchDash('address')">Meu endereço</button>
-                <button class="dash-btn" onclick="switchDash('support')">Suporte</button>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-section="profile">
+                    <img src="https://www.svgrepo.com/show/497407/profile.svg" class="nav-icon"> Meu perfil
+                </button>
+                <button class="nav-btn" data-section="orders">
+                    <img src="https://www.svgrepo.com/show/497439/shopping-bag.svg" class="nav-icon"> Meus pedidos
+                </button>
+                <button class="nav-btn" data-section="address">
+                    <img src="https://www.svgrepo.com/show/497258/location-pin.svg" class="nav-icon"> Meu endereço
+                </button>
+                <button class="nav-btn" data-section="support">
+                    <img src="https://www.svgrepo.com/show/497184/help.svg" class="nav-icon"> Suporte
+                </button>
             </nav>
+            <div class="sidebar-footer">
+                <button class="nav-btn logout-btn" id="btn-logout-dash">
+                    <img src="https://www.svgrepo.com/show/497255/logout.svg" class="nav-icon"> Sair da conta
+                </button>
+            </div>
         </aside>
 
-        <section class="dashboard-main-content">
-            <div id="section-profile" class="content-section active">
-                <h3>Dados do Perfil</h3>
-                <div class="data-card">
-                    <p><strong>Nome:</strong> <span id="info-name">...</span></p>
-                    <p><strong>E-mail:</strong> <span id="info-email">...</span></p>
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="main-content">
+            
+            <!-- CABEÇALHO DO USUÁRIO -->
+            <header class="user-header">
+                <div class="avatar-wrapper">
+                    <div class="avatar-border">
+                        <img src="assets/icon-user.svg" id="dash-user-img" class="user-avatar">
+                        <label for="upload-photo" class="edit-photo-badge">
+                            <img src="https://www.svgrepo.com/show/497389/photo-camera.svg" width="14">
+                        </label>
+                        <input type="file" id="upload-photo" style="display:none" accept="image/*">
+                    </div>
                 </div>
-            </div>
-            <div id="section-orders" class="content-section">
-                <h3>Meus Pedidos</h3>
-                <p>Nenhum pedido realizado até o momento.</p>
-            </div>
-            <div id="section-address" class="content-section">
-                <h3>Endereços Salvos</h3>
-                <p>Você não possui endereços cadastrados.</p>
-            </div>
-            <div id="section-support" class="content-section">
-                <h3>Canal de Suporte</h3>
-                <p>Dúvidas? Entre em contato pelo e-mail: suporte@medferpa.com</p>
-            </div>
-        </section>
-    </main>
+                <h2 id="dash-user-name">Carregando...</h2>
+                <p id="dash-user-email">...</p>
+            </header>
 
+            <!-- SEÇÕES DINÂMICAS -->
+            <div class="sections-wrapper">
+                
+                <!-- 1. MEU PERFIL -->
+                <section id="section-profile" class="content-section active">
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h3>Dados pessoais</h3>
+                            <button class="edit-toggle" onclick="toggleEdit('profile')">Editar</button>
+                        </div>
+                        <div class="info-list" id="list-profile">
+                            <div class="info-item">
+                                <label>Nome completo</label>
+                                <input type="text" id="edit-name" value="..." disabled>
+                            </div>
+                            <div class="info-item">
+                                <label>E-mail</label>
+                                <input type="email" id="edit-email" value="..." disabled>
+                            </div>
+                            <div class="info-item">
+                                <label>Gênero</label>
+                                <select id="edit-gender" disabled>
+                                    <option value="não informado">Não informado</option>
+                                    <option value="masculino">Masculino</option>
+                                    <option value="feminino">Feminino</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </div>
+                            <div class="info-item">
+                                <label>Telefone</label>
+                                <input type="tel" id="edit-phone" value="(00) 00000-0000" disabled>
+                            </div>
+                            <button class="save-btn" id="save-profile" style="display:none">Salvar Alterações</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. MEUS PEDIDOS -->
+                <section id="section-orders" class="content-section">
+                    <div class="info-card">
+                        <h3>Pedidos em andamento</h3>
+                        <div id="active-orders-container">
+                            <p class="empty-msg">Você não tem pedidos recentes.</p>
+                        </div>
+                    </div>
+                    <div class="info-card" style="margin-top:20px">
+                        <h3>Histórico de pedidos</h3>
+                        <p class="empty-msg">Nenhum pedido finalizado.</p>
+                    </div>
+                </section>
+
+                <!-- 3. MEU ENDEREÇO -->
+                <section id="section-address" class="content-section">
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h3>Endereço de entrega</h3>
+                            <button class="edit-toggle" onclick="toggleEdit('address')">Editar</button>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-item"><label>CEP</label><input type="text" id="addr-cep" value="00000-000" disabled></div>
+                            <div class="info-item"><label>Bairro</label><input type="text" id="addr-bairro" value="..." disabled></div>
+                            <div class="info-item"><label>Rua/Avenida</label><input type="text" id="addr-rua" value="..." disabled></div>
+                            <div class="info-item"><label>Número</label><input type="text" id="addr-num" value="S/N" disabled></div>
+                            <div class="info-item"><label>Complemento</label><input type="text" id="addr-comp" value="-" disabled></div>
+                            <button class="save-btn" id="save-address" style="display:none">Salvar Endereço</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. SUPORTE -->
+                <section id="section-support" class="content-section">
+                    <div class="info-card support-card">
+                        <img src="https://www.svgrepo.com/show/497636/whatsapp.svg" width="50">
+                        <h3>Precisa de ajuda?</h3>
+                        <p>Nosso time de especialistas está pronto para te atender via WhatsApp.</p>
+                        <a href="https://wa.me/5562985160533" target="_blank" class="btn-whatsapp">Falar no WhatsApp</a>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
     <script type="module" src="scripts/auth.js"></script>
     <script>
-        function switchDash(id) {
-            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.dash-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('section-' + id).classList.add('active');
-            event.currentTarget.classList.add('active');
+        // Lógica de troca de abas
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sectionId = btn.getAttribute('data-section');
+                if(!sectionId) return;
+
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                document.getElementById('section-' + sectionId).classList.add('active');
+            });
+        });
+
+        // Alternar modo edição
+        function toggleEdit(type) {
+            const section = document.getElementById('section-' + type);
+            const inputs = section.querySelectorAll('input, select');
+            const saveBtn = section.querySelector('.save-btn');
+            const editBtn = section.querySelector('.edit-toggle');
+
+            const isDisabled = inputs[0].disabled;
+
+            inputs.forEach(i => i.disabled = !isDisabled);
+            saveBtn.style.display = isDisabled ? 'block' : 'none';
+            editBtn.innerText = isDisabled ? 'Cancelar' : 'Editar';
         }
     </script>
 </body>

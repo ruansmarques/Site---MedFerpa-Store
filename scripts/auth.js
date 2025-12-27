@@ -130,6 +130,24 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
+// --- DADOS DO USUÁRIO NO DASHBOARD ---
+onAuthStateChanged(auth, (user) => {
+    if (user && window.location.pathname.includes('dashboard.html')) {
+        // Preenche Nome e Email no Header do Dash
+        const dashName = document.getElementById('dash-user-name');
+        const dashEmail = document.getElementById('dash-user-email');
+        const dashImg = document.getElementById('dash-user-img');
+        const editName = document.getElementById('edit-name');
+        const editEmail = document.getElementById('edit-email');
+
+        if(dashName) dashName.innerText = user.displayName || user.email.split('@')[0];
+        if(dashEmail) dashEmail.innerText = user.email;
+        if(editName) editName.value = user.displayName || "";
+        if(editEmail) editEmail.value = user.email;
+        if(dashImg && user.photoURL) dashImg.src = user.photoURL;
+    }
+});
+
 // --- AUXILIARES ---
 function openModal(type) {
     const modalData = {
@@ -153,5 +171,12 @@ function traduzirErroFirebase(code) {
         default: return 'Erro inesperado. Tente novamente.';
     }
 }
+
+// Listener do Botão Sair no Dashboard
+document.getElementById('btn-logout-dash')?.addEventListener('click', () => {
+    signOut(auth).then(() => {
+        window.location.href = "index.html"; // Volta para a home ao deslogar
+    });
+});
 
 initEvents();

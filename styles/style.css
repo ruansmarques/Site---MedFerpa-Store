@@ -55,7 +55,7 @@ body {
 }
 
 .header-icons { display: flex; gap: 20px; align-items: center; }
-.header-icons .icon { width: 24px; cursor: pointer; }
+.header-icons .icon { width: 30px; cursor: pointer; }
 
 .cart-wrapper { position: relative; cursor: pointer; }
 .cart-badge { 

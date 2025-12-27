@@ -202,6 +202,7 @@ window.toggleCart = () => {
     document.getElementById('cart-overlay').classList.toggle('active');
 };
 
+/* --- ADICIONAR AO CARRINHO (LÓGICA DE AGRUPAMENTO) --- */
 window.addToCart = (productId) => {
     const card = document.getElementById(`product-${productId}`);
     const size = card.dataset.selectedSize;
@@ -209,57 +210,142 @@ window.addToCart = (productId) => {
     const img = card.dataset.selectedImg;
     const errorMsg = card.querySelector('.error-msg');
 
+    // 1. Validação: Impede adicionar sem tamanho selecionado
     if (!size) {
-        errorMsg.style.display = 'block';
+        if (errorMsg) errorMsg.style.display = 'block';
+        // Scroll suave até o erro para alertar o usuário no mobile
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
-    errorMsg.style.display = 'none';
+    if (errorMsg) errorMsg.style.display = 'none';
 
-    const product = productsData.find(p => p.id === productId);
-    cart.push({
-        id: productId,
-        name: product.name,
-        price: product.price,
-        size: size,
-        color: color,
-        img: img,
-        quantity: 1
-    });
+    // 2. Mecanismo de Identificação: Procura item ID + COR + TAMANHO idênticos
+    const existingItem = cart.find(item => 
+        item.id === productId && 
+        item.size === size && 
+        item.color === color
+    );
 
+    if (existingItem) {
+        // Se já existe exatamente igual, apenas aumenta a quantidade
+        existingItem.quantity += 1;
+        console.log(`➕ Quantidade atualizada para ${existingItem.name} (${size}): ${existingItem.quantity}`);
+    } else {
+        // Se for uma combinação nova, adiciona como novo objeto
+        const product = productsData.find(p => p.id === productId);
+        cart.push({
+            id: productId,
+            name: product.name,
+            price: product.price,
+            size: size,
+            color: color,
+            img: img,
+            quantity: 1
+        });
+        console.log(`🛒 Novo item adicionado: ${product.name} (${color} - ${size})`);
+    }
+
+    // 3. Atualiza interface, salva no navegador e abre a lateral
     updateCartUI();
+    saveCart();
     toggleCart();
 };
 
+/* --- ATUALIZAÇÃO DA INTERFACE DO CARRINHO --- */
 function updateCartUI() {
     const container = document.getElementById('cart-items-container');
-    const subtotalEl = document.getElementById('cart-subtotal');
-    const badgeEl = document.getElementById('global-cart-count');
+    const totalElement = document.getElementById('cart-subtotal');
+    const countElement = document.getElementById('global-cart-count');
 
-    let total = 0;
-    container.innerHTML = cart.map((item, idx) => {
-        total += item.price * item.quantity;
-        return `
-            <div class="cart-item">
-                <img src="${item.img}">
-                <div class="cart-item-info">
-                    <h4>${item.name}</h4>
-                    <p>${item.color} | Tam: ${item.size}</p>
-                    <p class="price">R$ ${item.price.toFixed(2).replace('.', ',')}</p>
+    let subtotal = 0;
+    let totalItems = 0;
+
+    if (cart.length === 0) {
+        container.innerHTML = `<p style="text-align:center; padding: 40px 20px; color: #999;">Seu carrinho está vazio.</p>`;
+    } else {
+        container.innerHTML = cart.map((item, index) => {
+            subtotal += item.price * item.quantity;
+            totalItems += item.quantity;
+
+            // Busca os dados originais do produto para preencher os selects
+            const product = productsData.find(p => p.id === item.id);
+
+            return `
+                <div class="cart-item">
+                    <img src="${item.img}" alt="${item.name}">
+                    <div class="cart-item-info">
+                        <h4>${item.name}</h4>
+                        
+                        <div class="cart-item-controls">
+                            <!-- Seletor de Cor -->
+                            <select class="cart-select" onchange="updateCartItemProperty(${index}, 'color', this.value)">
+                                ${product.colors.map(c => `<option value="${c.name}" ${c.name === item.color ? 'selected' : ''}>${c.name}</option>`).join('')}
+                            </select>
+
+                            <!-- Seletor de Tamanho -->
+                            <select class="cart-select" onchange="updateCartItemProperty(${index}, 'size', this.value)">
+                                ${product.sizes.map(s => `<option value="${s}" ${s === item.size ? 'selected' : ''}>${s}</option>`).join('')}
+                            </select>
+
+                            <!-- Controle de Quantidade -->
+                            <div class="qty-control">
+                                <button onclick="changeQty(${index}, -1)">-</button>
+                                <span>${item.quantity}</span>
+                                <button onclick="changeQty(${index}, 1)">+</button>
+                            </div>
+                        </div>
+
+                        <p class="cart-item-price">R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}</p>
+                    </div>
+
+                    <!-- Lixeira no Canto Superior Direito -->
+                    <button class="btn-remove" onclick="removeFromCart(${index})">
+                        <img src="assets/icon-trash.svg" alt="Remover">
+                    </button>
                 </div>
-                <button class="btn-remove" onclick="removeFromCart(${idx})">×</button>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    }
 
-    subtotalEl.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-    badgeEl.innerText = cart.length;
+    totalElement.innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+    if (countElement) countElement.innerText = totalItems;
 }
 
-window.removeFromCart = (idx) => {
-    cart.splice(idx, 1);
-    updateCartUI();
+/* --- FUNÇÕES AUXILIARES DO CARRINHO --- */
+
+// Altera quantidade (+ ou -)
+window.changeQty = (index, delta) => {
+    cart[index].quantity += delta;
+    if (cart[index].quantity < 1) {
+        removeFromCart(index);
+    } else {
+        updateCartUI();
+        saveCart(); // Atualiza a memória
+    }
 };
 
+// Altera propriedade (Cor ou Tamanho) diretamente no carrinho
+window.updateCartItemProperty = (index, property, value) => {
+    cart[index][property] = value;
+    
+    // Se mudar a cor, precisamos atualizar a imagem para a cor correspondente
+    if (property === 'color') {
+        const product = productsData.find(p => p.id === cart[index].id);
+        const colorData = product.colors.find(c => c.name === value);
+        if (colorData) cart[index].img = colorData.images[0];
+    }
+        updateCartUI();
+        saveCart(); // Atualiza a memória
+};
+
+// Remove item do carrinho
+window.removeFromCart = (index) => {
+    cart.splice(index, 1);
+    updateCartUI();
+    saveCart(); // Atualiza a memória
+};
+
+/* --- FUNÇÕES DO FAQ --- */
 function initFAQ() {
     document.querySelectorAll('.faq-question').forEach(btn => {
         btn.onclick = () => {
@@ -268,3 +354,34 @@ function initFAQ() {
         };
     });
 }
+
+/* --- PERSISTÊNCIA DE DADOS (LOCALSTORAGE) --- */
+
+// Salva o estado atual do carrinho no navegador
+function saveCart() {
+    localStorage.setItem('medferpa_cart', JSON.stringify(cart));
+}
+
+// Carrega o carrinho salvo ao abrir o site
+function loadCart() {
+    const savedCart = localStorage.getItem('medferpa_cart');
+    if (savedCart) {
+        try {
+            cart = JSON.parse(savedCart);
+            updateCartUI();
+            console.log("📦 Carrinho recuperado da sessão anterior.");
+        } catch (e) {
+            console.error("Erro ao carregar carrinho salvo.");
+            cart = [];
+        }
+    }
+}
+
+// Chame o loadCart dentro do seu DOMContentLoaded original
+document.addEventListener('DOMContentLoaded', () => {
+    loadCart(); // <--- Adicione esta linha aqui
+    renderProducts(productsData);
+    initFAQ();
+    initHeroSlider();
+    initFilters();
+});
