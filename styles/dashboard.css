@@ -253,3 +253,74 @@ input[readonly] {
 #section-support .save-btn:hover {
     background: #333;
 }
+
+/* Blocos de andamento e histórico de pedidos */
+
+.order-card-item {
+    background: #fff;
+    border: 1px solid #edf2f7;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+}
+
+.order-card-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f7fafc;
+}
+
+.status-badge {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 5px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+}
+
+.status-pending { background: #fffaf0; color: #dd6b20; }
+.status-delivered { background: #f0fff4; color: #38a169; }
+
+.order-card-body p {
+    font-size: 13px;
+    color: #4a5568;
+    margin-bottom: 5px;
+}
+
+.order-items-list {
+    font-weight: 600;
+    color: #2d3748 !important;
+    margin-top: 10px;
+}
+
+.btn-confirm-delivery {
+    width: 100%;
+    margin-top: 15px;
+    background: #000;
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-confirm-delivery:hover { background: #333; }
+
+.order-check-icon {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #38a169;
+}
