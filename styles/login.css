@@ -99,9 +99,26 @@ body {
 .login-footer { margin-top: 40px; display: flex; gap: 20px; }
 .link-footer-btn { background: none; border: none; font-family: 'Manrope'; font-size: 12px; color: #666; cursor: pointer; }
 
+/* Botão no modal e ajuste de cursor */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 1000;
 }
 .modal-content { background: #fff; width: 90%; max-width: 450px; padding: 30px; border-radius: 12px; }
 .btn-modal-close { background: #000; color: #fff; padding: 10px 25px; border: none; border-radius: 20px; margin-top: 20px; cursor: pointer; }
+
+.modal-actions { 
+    display: flex; 
+    justify-content: center; 
+    width: 100%; 
+    margin-top: 20px; 
+}
+
+#switch-to-signup { 
+    cursor: pointer; 
+    transition: opacity 0.2s; 
+}
+
+#switch-to-signup:hover { 
+    opacity: 0.7; 
+}

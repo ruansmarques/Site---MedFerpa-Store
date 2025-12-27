@@ -245,7 +245,45 @@ window.closeModal = () => {
     if (modal) modal.style.display = 'none';
 };
 
+// Fechar modal ao clicar fora da área de conteúdo (no overlay)
+window.addEventListener('click', (event) => {
+    const modal = document.getElementById('policy-modal');
+    if (event.target === modal) {
+        window.closeModal();
+    }
+});
+
 // Bind dos botões do footer de login
 document.getElementById('open-privacy')?.addEventListener('click', () => window.openModal('privacy'));
 document.getElementById('open-terms')?.addEventListener('click', () => window.openModal('terms'));
 document.getElementById('close-modal')?.addEventListener('click', window.closeModal);
+
+/* ============================================================
+   6. AUXILIARES DE INTERFACE - BOTÃO CADASTRAR
+   ============================================================ */
+
+window.toggleAuthMode = () => {
+    isLoginMode = !isLoginMode;
+    
+    const title = document.getElementById('auth-title');
+    const subtitle = document.getElementById('auth-subtitle');
+    const btnMain = document.getElementById('btn-auth-main');
+    const label = document.getElementById('auth-switch-label');
+    const switchBtn = document.getElementById('switch-to-signup');
+
+    if (title) {
+        title.innerText = isLoginMode ? "Fazer login" : "Criar sua conta";
+        subtitle.innerText = isLoginMode ? "Entre com seus dados" : "Cadastre-se para aproveitar as vantagens";
+        btnMain.innerText = isLoginMode ? "Entrar" : "Cadastrar Agora";
+        label.innerText = isLoginMode ? "Não tem uma conta?" : "Já possui conta?";
+        switchBtn.innerText = isLoginMode ? "Cadastre-se aqui" : "Faça login";
+    }
+};
+
+// Reatribuição garantida dos eventos após carregamento do módulo
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('switch-to-signup')?.addEventListener('click', window.toggleAuthMode);
+    document.getElementById('open-privacy')?.addEventListener('click', () => window.openModal('privacy'));
+    document.getElementById('open-terms')?.addEventListener('click', () => window.openModal('terms'));
+    document.getElementById('close-modal')?.addEventListener('click', window.closeModal);
+});
