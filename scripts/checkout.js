@@ -1,6 +1,6 @@
 /**
  * LÓGICA DE CHECKOUT E PAGAMENTO REAL - MEDFERPA STORE
- * Versão: v.111 - CONEXÃO COM API REAL (FIREBASE FUNCTIONS)
+ * Versão: v.112 - Refinamento Bricks e Sincronização de Dados
  */
 
 /* ============================================================
@@ -12,9 +12,7 @@ import {
     getFirestore, 
     collection, 
     addDoc, 
-    serverTimestamp,
-    doc,
-    setDoc 
+    serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -81,7 +79,8 @@ window.goToStep = (step) => {
     if (step === 2) {
         const email = document.getElementById('cus-email').value;
         const name = document.getElementById('cus-name').value;
-        if (!email || !name) return alert("Por favor, preencha seus dados de identificação.");
+        const cpf = document.getElementById('cus-cpf').value;
+        if (!email || !name || !cpf) return alert("Por favor, preencha todos os dados de identificação.");
     }
 
     if (step === 3) {
@@ -121,42 +120,48 @@ function renderSummary() {
 }
 
 /* ============================================================
-   6. INTEGRAÇÃO MERCADO PAGO - CONEXÃO COM A API REAL
+   6. INTEGRAÇÃO MERCADO PAGO - PAYMENT BRICK REFINADO
    ============================================================ */
 async function initMercadoPagoBrick() {
     if (paymentBrickController) return;
 
     const totalAmount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    
+    // Captura os dados preenchidos nos passos anteriores para passar ao Brick
     const userEmail = document.getElementById('cus-email').value;
+    const userName = document.getElementById('cus-name').value;
+    const userSurname = document.getElementById('cus-surname').value;
+    const userCPF = document.getElementById('cus-cpf').value.replace(/\D/g, ''); // Apenas números
 
     const settings = {
         initialization: {
             amount: totalAmount,
             payer: {
                 email: userEmail,
-                firstName: document.getElementById('cus-name').value,
-                lastName: document.getElementById('cus-surname').value,
+                firstName: userName,
+                lastName: userSurname,
+                identification: {
+                    type: 'CPF',
+                    number: userCPF
+                }
             },
         },
         customization: {
             paymentMethods: {
                 creditCard: "all",
-                ticket: "all",
-                bankTransfer: "all",
+                ticket: "all", // Ativa Boleto e PEC
+                bankTransfer: "all", // Ativa Pix
                 maxInstallments: 12
             },
             visual: {
                 style: { theme: 'default' },
-                texts: { paymentsTitle: 'Meio de pagamento', payButton: 'Pagar Agora' }
+                texts: { paymentsTitle: 'Escolha como pagar', payButton: 'Finalizar Pagamento' }
             }
         },
         callbacks: {
-            onReady: () => console.log("Payment Brick pronto."),
-            
-            // BLOCO ALTERADO: Agora envia os dados para a sua API no Firebase Functions
+            onReady: () => console.log("Payment Brick refinado e pronto."),
             onSubmit: ({ selectedPaymentMethod, formData }) => {
                 return new Promise((resolve, reject) => {
-                    // SUA URL DO FIREBASE FUNCTIONS
                     const functionUrl = "https://us-central1-medferpa-store-1cd4d.cloudfunctions.net/processPayment";
 
                     fetch(functionUrl, {
@@ -166,8 +171,8 @@ async function initMercadoPagoBrick() {
                     })
                     .then(response => response.json())
                     .then(result => {
-                        // Se o status for 'approved' (Aprovado), salvamos o pedido no banco
-                        if (result.status === "approved") {
+                        // Aceita 'approved' ou 'in_process' (comum para Pix/Boleto)
+                        if (result.status === "approved" || result.status === "in_process") {
                             processOrder(totalAmount, selectedPaymentMethod, resolve, reject);
                         } else {
                             alert("Pagamento não aprovado. Status: " + (result.status_detail || result.status));
@@ -175,15 +180,15 @@ async function initMercadoPagoBrick() {
                         }
                     })
                     .catch(error => {
-                        console.error("Erro na chamada da API:", error);
-                        alert("Ocorreu um erro ao processar o pagamento com o servidor.");
+                        console.error("Erro na API:", error);
+                        alert("Erro de comunicação com o servidor.");
                         reject();
                     });
                 });
             },
             onError: (error) => {
                 console.error("Erro no Brick:", error);
-                alert("Erro ao carregar o sistema de pagamento.");
+                alert("Erro ao carregar o pagamento.");
             },
         },
     };
@@ -192,7 +197,7 @@ async function initMercadoPagoBrick() {
 }
 
 /* ============================================================
-   7. FINALIZAÇÃO DO PEDIDO (SALVAR NO BANCO DE DADOS)
+   7. FINALIZAÇÃO DO PEDIDO (SALVAR NO FIRESTORE)
    ============================================================ */
 async function processOrder(totalValue, method, resolve, reject) {
     const user = auth.currentUser;
@@ -221,12 +226,12 @@ async function processOrder(totalValue, method, resolve, reject) {
     try {
         await addDoc(collection(db, "orders"), orderData);
         localStorage.removeItem('medferpa_cart');
-        resolve(); // Notifica o Mercado Pago Brick do sucesso
-        alert(`Pedido #${orderNumber} realizado com sucesso!`);
+        resolve();
+        alert(`Sucesso! Pedido #${orderNumber} gerado.`);
         window.location.href = "dashboard.html?status=success";
     } catch (error) {
-        console.error("Erro ao salvar pedido:", error);
-        alert("Erro ao registrar o pedido no banco de dados.");
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao registrar o pedido.");
         reject();
     }
 }
