@@ -66,11 +66,17 @@
 
             <!-- ETAPA 3: PAGAMENTO (MERCADO PAGO BRICKS) -->
             <section id="form-step-3" class="form-card">
-                <h3>Pagamento</h3>
-                <p class="step-desc">Escolha como prefere pagar com segurança.</p>
-                <!-- Container onde o Mercado Pago vai injetar o Brick -->
+                <div class="checkout-step-header">
+                    <h3>Pagamento Seguro</h3>
+                    <p class="step-desc">Selecione o meio de pagamento. Suas informações são criptografadas.</p>
+                </div>
+                
+                <!-- Container onde o Mercado Pago injeta o sistema de Cartão, Pix e Boleto -->
                 <div id="paymentBrick_container"></div>
-                <button class="btn-back" onclick="goToStep(2)">VOLTAR PARA ENTREGA</button>
+
+                <div class="nav-btns" style="margin-top: 20px;">
+                    <button class="btn-back" onclick="goToStep(2)">← Voltar para entrega</button>
+                </div>
             </section>
 
         </div>
