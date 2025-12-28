@@ -120,18 +120,18 @@ function renderSummary() {
 }
 
 /* ============================================================
-   6. INTEGRAÇÃO MERCADO PAGO - PAYMENT BRICK REFINADO
+   6. INTEGRAÇÃO MERCADO PAGO - PAYMENT BRICK REFINADO (v.112)
    ============================================================ */
 async function initMercadoPagoBrick() {
     if (paymentBrickController) return;
 
     const totalAmount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     
-    // Captura os dados preenchidos nos passos anteriores para passar ao Brick
+    // Captura dados dos inputs
     const userEmail = document.getElementById('cus-email').value;
     const userName = document.getElementById('cus-name').value;
     const userSurname = document.getElementById('cus-surname').value;
-    const userCPF = document.getElementById('cus-cpf').value.replace(/\D/g, ''); // Apenas números
+    const userCPF = document.getElementById('cus-cpf').value.replace(/\D/g, ''); // Limpa pontos/traços
 
     const settings = {
         initialization: {
@@ -142,15 +142,15 @@ async function initMercadoPagoBrick() {
                 lastName: userSurname,
                 identification: {
                     type: 'CPF',
-                    number: userCPF
+                    number: userCPF // ESSENCIAL PARA PIX/BOLETO
                 }
             },
         },
         customization: {
             paymentMethods: {
                 creditCard: "all",
-                ticket: "all", // Ativa Boleto e PEC
-                bankTransfer: "all", // Ativa Pix
+                ticket: "all",
+                bankTransfer: "all",
                 maxInstallments: 12
             },
             visual: {
@@ -159,39 +159,42 @@ async function initMercadoPagoBrick() {
             }
         },
         callbacks: {
-            onReady: () => console.log("Payment Brick refinado e pronto."),
+            onReady: () => console.log("Payment Brick pronto."),
             onSubmit: ({ selectedPaymentMethod, formData }) => {
                 return new Promise((resolve, reject) => {
-                    const functionUrl = "https://us-central1-medferpa-store-1cd4d.cloudfunctions.net/processPayment";
+                    // URL COPIADA DA SUA IMAGEM DO FIREBASE
+                    const functionUrl = "https://processpayment-r2afswcq3a-uc.a.run.app";
 
-                    fetch(functionUrl, {
+                    fetch("https://processpayment-r2afswcq3a-uc.a.run.app", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: { 
+                            "Content-Type": "application/json" 
+                        },
                         body: JSON.stringify(formData),
                     })
-                    .then(response => response.json())
+                    .then(async response => {
+                        // Se o Google retornar 403 ou 404, cairemos aqui
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.message || `Erro do servidor: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(result => {
-                        // Aceita 'approved' ou 'in_process' (comum para Pix/Boleto)
-                        if (result.status === "approved" || result.status === "in_process") {
+                        console.log("Resposta do Mercado Pago:", result);
+                        // Aceita aprovado ou pendente (importante para Pix/Boleto)
+                        if (result.status === "approved" || result.status === "in_process" || result.status === "pending") {
                             processOrder(totalAmount, selectedPaymentMethod, resolve, reject);
                         } else {
-                            alert("Pagamento não aprovado. Status: " + (result.status_detail || result.status));
+                            alert("Pagamento não aprovado. Status: " + result.status);
                             reject();
                         }
                     })
                     .catch(error => {
-                        console.error("Erro na API:", error);
-                        alert("Erro de comunicação com o servidor.");
+                        console.error("Erro na chamada:", error);
+                        alert("Erro de conexão: " + error.message);
                         reject();
                     });
-                });
-            },
-            onError: (error) => {
-                console.error("Erro no Brick:", error);
-                alert("Erro ao carregar o pagamento.");
-            },
-        },
-    };
 
     paymentBrickController = await bricksBuilder.create('payment', 'paymentBrick_container', settings);
 }
