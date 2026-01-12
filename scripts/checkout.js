@@ -1,6 +1,9 @@
 /**
  * LÓGICA DE CHECKOUT E PAGAMENTO REAL - MEDFERPA STORE
- * Versão: v.112 - Refinamento Bricks e Sincronização de Dados
+ * Versão: v.113 - ESTABILIZAÇÃO DE TOTAIS E BOTÕES
+ * 
+ * Descrição: Corrige o bug de valor R$ 0,00 e restaura a funcionalidade
+ * do botão de finalizar pagamento com integração ao Firebase.
  */
 
 /* ============================================================
@@ -32,18 +35,22 @@ const db = getFirestore(app);
 const mp = new MercadoPago('APP_USR-786f2d55-857b-4ddf-9d4c-ff1d7a216ea4'); 
 const bricksBuilder = mp.bricks();
 
+// Estado Global
 let cart = JSON.parse(localStorage.getItem('medferpa_cart')) || [];
 let paymentBrickController = null;
+let totalCompra = 0; // Variável global para armazenar o valor exato da compra
 
 /* ============================================================
    2. INICIALIZAÇÃO DA PÁGINA
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-    if (cart.length === 0) {
-        alert("Seu carrinho está vazio.");
+    // Redireciona se o carrinho estiver vazio ou se houver erro nos dados
+    if (!cart || cart.length === 0) {
+        alert("Seu carrinho está vazio ou os dados são inválidos.");
         window.location.href = 'index.html';
         return;
     }
+    
     renderSummary();
     checkLoggedUser();
 });
@@ -59,6 +66,7 @@ function checkLoggedUser() {
             document.getElementById('cus-name').value = nameParts[0];
             document.getElementById('cus-surname').value = nameParts.slice(1).join(' ');
             
+            // Busca endereço do LocalStorage vinculado ao UID
             const savedAddr = JSON.parse(localStorage.getItem(`user_addr_${user.uid}`));
             if (savedAddr) {
                 document.getElementById('ship-cep').value = savedAddr.cep || "";
@@ -80,70 +88,75 @@ window.goToStep = (step) => {
         const email = document.getElementById('cus-email').value;
         const name = document.getElementById('cus-name').value;
         const cpf = document.getElementById('cus-cpf').value;
-        if (!email || !name || !cpf) return alert("Por favor, preencha todos os dados de identificação.");
+        if (!email || !name || !cpf) return alert("Por favor, preencha seus dados de identificação.");
     }
 
     if (step === 3) {
         const cep = document.getElementById('ship-cep').value;
         const street = document.getElementById('ship-street').value;
         const num = document.getElementById('ship-number').value;
-        if (!cep || !street || !num) return alert("Por favor, preencha o endereço de entrega completo.");
+        if (!cep || !street || !num) return alert("Preencha o endereço de entrega completo.");
+        
+        // Garante que o totalCompra esteja atualizado antes de abrir o pagamento
+        if (totalCompra <= 0) return alert("Erro ao calcular o valor da compra. Recarregue a página.");
+        
         initMercadoPagoBrick();
     }
 
     document.querySelectorAll('.form-card').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    
     document.getElementById(`form-step-${step}`).classList.add('active');
     document.getElementById(`step-dot-${step}`).classList.add('active');
     window.scrollTo(0, 0);
 };
 
 /* ============================================================
-   5. RESUMO DO PEDIDO LADO DIREITO
+   5. RESUMO DO PEDIDO E CÁLCULO DE VALORES
    ============================================================ */
 function renderSummary() {
     const list = document.getElementById('summary-items-list');
-    let total = 0;
+    totalCompra = 0; // Reseta para calcular de novo
+
     list.innerHTML = cart.map(item => {
-        const itemTotal = item.price * item.quantity;
-        total += itemTotal;
+        // Garante que o preço e quantidade sejam tratados como números
+        const preco = Number(item.price);
+        const qtd = Number(item.quantity);
+        const itemTotal = preco * qtd;
+        totalCompra += itemTotal;
+
         return `
             <div class="sum-item">
-                <span style="font-size: 13px;">${item.quantity}x ${item.name} (${item.size})</span>
+                <span style="font-size: 13px;">${qtd}x ${item.name} (${item.size})</span>
                 <span style="font-weight: 700;">R$ ${itemTotal.toFixed(2).replace('.', ',')}</span>
             </div>
         `;
     }).join('');
-    const formattedTotal = `R$ ${total.toFixed(2).replace('.', ',')}`;
+
+    const formattedTotal = `R$ ${totalCompra.toFixed(2).replace('.', ',')}`;
     document.getElementById('sum-subtotal').innerText = formattedTotal;
     document.getElementById('sum-total').innerText = formattedTotal;
 }
 
 /* ============================================================
-   6. INTEGRAÇÃO MERCADO PAGO - PAYMENT BRICK REFINADO (v.112)
+   6. INTEGRAÇÃO MERCADO PAGO - PAYMENT BRICK (CONEXÃO API REAL)
    ============================================================ */
 async function initMercadoPagoBrick() {
     if (paymentBrickController) return;
 
-    const totalAmount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    
-    // Captura dados dos inputs
     const userEmail = document.getElementById('cus-email').value;
     const userName = document.getElementById('cus-name').value;
     const userSurname = document.getElementById('cus-surname').value;
-    const userCPF = document.getElementById('cus-cpf').value.replace(/\D/g, ''); // Limpa pontos/traços
+    const userCPF = document.getElementById('cus-cpf').value.replace(/\D/g, '');
 
     const settings = {
         initialization: {
-            amount: totalAmount,
+            amount: totalCompra, // Valor exato calculado no renderSummary
             payer: {
                 email: userEmail,
                 firstName: userName,
                 lastName: userSurname,
-                identification: {
-                    type: 'CPF',
-                    number: userCPF // ESSENCIAL PARA PIX/BOLETO
-                }
+                identification: { type: 'CPF', number: userCPF }
             },
         },
         customization: {
@@ -155,52 +168,47 @@ async function initMercadoPagoBrick() {
             },
             visual: {
                 style: { theme: 'default' },
-                texts: { paymentsTitle: 'Escolha como pagar', payButton: 'Finalizar Pagamento' }
+                texts: { payButton: 'Finalizar Pagamento' }
             }
         },
         callbacks: {
-            onReady: () => console.log("Payment Brick pronto."),
+            onReady: () => console.log("Bricks carregado com o total: R$", totalCompra),
             onSubmit: ({ selectedPaymentMethod, formData }) => {
                 return new Promise((resolve, reject) => {
-                    // URL COPIADA DA SUA IMAGEM DO FIREBASE
-                    const functionUrl = "https://processpayment-r2afswcq3a-uc.a.run.app";
+                    const functionUrl = "https://us-central1-medferpa-store-1cd4d.cloudfunctions.net/processPayment";
 
-                    fetch("https://processpayment-r2afswcq3a-uc.a.run.app", {
+                    fetch(functionUrl, {
                         method: "POST",
-                        headers: { 
-                            "Content-Type": "application/json" 
-                        },
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(formData),
                     })
-                    .then(async response => {
-                        // Se o Google retornar 403 ou 404, cairemos aqui
-                        if (!response.ok) {
-                            const errorData = await response.json().catch(() => ({}));
-                            throw new Error(errorData.message || `Erro do servidor: ${response.status}`);
-                        }
-                        return response.json();
-                    })
+                    .then(response => response.json())
                     .then(result => {
-                        console.log("Resposta do Mercado Pago:", result);
-                        // Aceita aprovado ou pendente (importante para Pix/Boleto)
+                        // Aceita status de aprovado ou pendente (Pix/Boleto)
                         if (result.status === "approved" || result.status === "in_process" || result.status === "pending") {
-                            processOrder(totalAmount, selectedPaymentMethod, resolve, reject);
+                            // Envia os dados para salvar no Firebase e passa o resolve/reject do botão
+                            processOrder(totalCompra, selectedPaymentMethod, resolve, reject);
                         } else {
-                            alert("Pagamento não aprovado. Status: " + result.status);
+                            alert("Pagamento recusado: " + (result.status_detail || result.status));
                             reject();
                         }
                     })
                     .catch(error => {
-                        console.error("Erro na chamada:", error);
-                        alert("Erro de conexão: " + error.message);
+                        console.error("Erro na API:", error);
+                        alert("Erro de comunicação com o servidor de pagamentos.");
                         reject();
                     });
+                });
+            },
+            onError: (error) => console.error("Erro no Brick:", error),
+        },
+    };
 
     paymentBrickController = await bricksBuilder.create('payment', 'paymentBrick_container', settings);
 }
 
 /* ============================================================
-   7. FINALIZAÇÃO DO PEDIDO (SALVAR NO FIRESTORE)
+   7. PROCESSAMENTO E SALVAMENTO DO PEDIDO NO BANCO
    ============================================================ */
 async function processOrder(totalValue, method, resolve, reject) {
     const user = auth.currentUser;
@@ -228,13 +236,17 @@ async function processOrder(totalValue, method, resolve, reject) {
 
     try {
         await addDoc(collection(db, "orders"), orderData);
+        
+        // Sucesso total: limpa carrinho e comunica o Mercado Pago
         localStorage.removeItem('medferpa_cart');
-        resolve();
-        alert(`Sucesso! Pedido #${orderNumber} gerado.`);
+        resolve(); // Aqui o botão de pagamento finaliza a animação com sucesso
+
+        alert(`Pedido #${orderNumber} realizado com sucesso!`);
         window.location.href = "dashboard.html?status=success";
+
     } catch (error) {
-        console.error("Erro ao salvar:", error);
-        alert("Erro ao registrar o pedido.");
-        reject();
+        console.error("Erro ao salvar pedido:", error);
+        alert("Erro ao registrar o pedido no banco. O pagamento foi processado, entre em contato com o suporte.");
+        reject(); // Libera o botão do estado de loading mesmo em erro de salvamento
     }
 }
