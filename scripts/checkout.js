@@ -253,16 +253,17 @@ function handlePendingPayment(result, method, resolve) {
 /* ============================================================
    8. SALVAMENTO DO PEDIDO (FIRESTORE)
    ============================================================ */
-async function processOrder(totalValue, method, statusLabel, resolve) {
+async function processOrder(totalValue, method, statusLabel, resolve, fixedOrderNum) {
     const user = auth.currentUser;
-    const orderNumber = Math.floor(100000 + Math.random() * 900000);
+    const uid = user ? user.uid : "guest";
 
     const orderData = {
-        orderNumber: orderNumber,
-        userId: user ? user.uid : "guest",
+        // AGORA USAMOS O NÚMERO QUE VEIO DO PAGAMENTO:
+        orderNumber: fixedOrderNum, 
+        userId: uid,
         customerName: (document.getElementById('cus-name').value + " " + document.getElementById('cus-surname').value).toUpperCase(),
         customerEmail: document.getElementById('cus-email').value,
-        total: totalValue,
+        total: Number(totalValue),
         paymentMethod: method,
         status: statusLabel, 
         createdAt: serverTimestamp(),
@@ -270,22 +271,18 @@ async function processOrder(totalValue, method, statusLabel, resolve) {
         delivery: {
             rua: document.getElementById('ship-street').value,
             num: document.getElementById('ship-number').value,
-            bairro: document.getElementById('ship-bairro').value,
             cep: document.getElementById('ship-cep').value
         }
     };
 
     try {
-        await addDoc(collection(db, "orders"), orderData);
+        const docRef = await addDoc(collection(db, "orders"), orderData);
+        console.log("✅ Pedido sincronizado com o Mercado Pago. ID no Banco:", fixedOrderNum);
         localStorage.removeItem('medferpa_cart');
-        resolve(); // Conclui a animação de carregamento do botão do Mercado Pago
-        
-        // Se for cartão (aprovado na hora), redireciona direto
-        if (statusLabel === "Pagamento Aprovado") {
-            alert("Pagamento Aprovado! Você será redirecionado.");
-            window.location.href = "dashboard.html";
-        }
-    } catch (e) {
-        console.error("Erro ao salvar pedido:", e);
+        if (typeof resolve === 'function') resolve();
+        return docRef.id;
+    } catch (e) { 
+        console.error("❌ Erro ao salvar:", e);
+        throw e;
     }
 }
