@@ -1,8 +1,14 @@
 /**
  * LÓGICA DE CHECKOUT E PAGAMENTO REAL - MEDFERPA STORE
- * Versão: v.114 - FLUXO DE PAGAMENTO ASSÍNCRONO (PIX/BOLETO)
+ * Versão: v.115 - CORREÇÃO DE CALLBACKS E INICIALIZAÇÃO
+ * 
+ * Descrição: Resolve erros de inicialização do Brick, restaura obrigatoriedade
+ * de callbacks (onReady/onError) e corrige cálculos de subtotal no resumo.
  */
 
+/* ============================================================
+   1. IMPORTAÇÕES E CONFIGURAÇÕES INICIAIS
+   ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { 
@@ -12,6 +18,7 @@ import {
     serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// Configuração do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyBgYUAagQzShLLAddybvinAYP17inZkYNg",
     authDomain: "medferpa-store-1cd4d.firebaseapp.com",
@@ -22,29 +29,38 @@ const firebaseConfig = {
     measurementId: "G-YSPZM27EEK"
 };
 
+// Inicialização das ferramentas
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Chave Pública do Mercado Pago
 const mp = new MercadoPago('APP_USR-786f2d55-857b-4ddf-9d4c-ff1d7a216ea4'); 
 const bricksBuilder = mp.bricks();
 
+// Variáveis de Controle Global
 let cart = JSON.parse(localStorage.getItem('medferpa_cart')) || [];
 let paymentBrickController = null;
 let totalCompra = 0;
 
 /* ============================================================
-   2. INICIALIZAÇÃO E MONITORAMENTO
+   2. INICIALIZAÇÃO DA PÁGINA
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+    // Validação de segurança do carrinho
     if (!cart || cart.length === 0) {
+        alert("Seu carrinho está vazio.");
         window.location.href = 'index.html';
         return;
     }
-    renderSummary();
-    checkLoggedUser();
+    
+    renderSummary(); // Calcula valores e desenha o resumo
+    checkLoggedUser(); // Monitora login para preenchimento
 });
 
+/* ============================================================
+   3. MONITOR DE SESSÃO E PREENCHIMENTO AUTOMÁTICO
+   ============================================================ */
 function checkLoggedUser() {
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -57,62 +73,106 @@ function checkLoggedUser() {
 }
 
 /* ============================================================
-   3. NAVEGAÇÃO ENTRE ETAPAS
+   4. CONTROLE DE NAVEGAÇÃO (TRANSICÃO DE ETAPAS)
    ============================================================ */
 window.goToStep = (step) => {
+    // Validações antes de avançar para entrega
     if (step === 2) {
-        if (!document.getElementById('cus-email').value || !document.getElementById('cus-name').value || !document.getElementById('cus-cpf').value) {
-            return alert("Preencha seus dados de identificação.");
-        }
+        const email = document.getElementById('cus-email').value;
+        const name = document.getElementById('cus-name').value;
+        const cpf = document.getElementById('cus-cpf').value;
+        if (!email || !name || !cpf) return alert("Por favor, preencha todos os dados de identificação.");
     }
+
+    // Validações antes de carregar o pagamento
     if (step === 3) {
-        if (!document.getElementById('ship-cep').value || !document.getElementById('ship-street').value) {
-            return alert("Preencha o endereço de entrega.");
-        }
+        const cep = document.getElementById('ship-cep').value;
+        const street = document.getElementById('ship-street').value;
+        if (!cep || !street) return alert("Por favor, preencha o endereço de entrega.");
+        
+        // Inicializa o Brick somente na etapa 3
         initMercadoPagoBrick();
     }
+
+    // Toggle visual de classes
     document.querySelectorAll('.form-card').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    
     document.getElementById(`form-step-${step}`).classList.add('active');
     document.getElementById(`step-dot-${step}`).classList.add('active');
+    
     window.scrollTo(0, 0);
 };
 
 /* ============================================================
-   4. RESUMO DO PEDIDO
+   5. RESUMO DO PEDIDO E CÁLCULOS TOTAIS
    ============================================================ */
 function renderSummary() {
     const list = document.getElementById('summary-items-list');
+    const subtotalEl = document.getElementById('sum-subtotal');
+    const totalEl = document.getElementById('sum-total');
+    
     totalCompra = 0;
+
     list.innerHTML = cart.map(item => {
-        totalCompra += (item.price * item.quantity);
-        return `<div class="sum-item"><span>${item.quantity}x ${item.name}</span><span>R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}</span></div>`;
+        const itemTotal = item.price * item.quantity;
+        totalCompra += itemTotal;
+        return `
+            <div class="sum-item">
+                <span>${item.quantity}x ${item.name} (${item.size})</span>
+                <span>R$ ${itemTotal.toFixed(2).replace('.', ',')}</span>
+            </div>
+        `;
     }).join('');
-    document.getElementById('sum-total').innerText = `R$ ${totalCompra.toFixed(2).replace('.', ',')}`;
+
+    const formatted = `R$ ${totalCompra.toFixed(2).replace('.', ',')}`;
+    if (subtotalEl) subtotalEl.innerText = formatted;
+    if (totalEl) totalEl.innerText = formatted;
 }
 
 /* ============================================================
-   5. INTEGRAÇÃO MERCADO PAGO - PAYMENT BRICK v.114
+   6. INTEGRAÇÃO MERCADO PAGO - PAYMENT BRICK (v.115)
    ============================================================ */
 async function initMercadoPagoBrick() {
+    // Proteção para não inicializar duas vezes o mesmo container
     if (paymentBrickController) return;
+
+    const userEmail = document.getElementById('cus-email').value;
+    const userName = document.getElementById('cus-name').value;
+    const userSurname = document.getElementById('cus-surname').value;
+    const userCPF = document.getElementById('cus-cpf').value.replace(/\D/g, '');
 
     const settings = {
         initialization: {
             amount: totalCompra,
             payer: {
-                email: document.getElementById('cus-email').value,
-                firstName: document.getElementById('cus-name').value,
-                lastName: document.getElementById('cus-surname').value,
-                identification: { type: 'CPF', number: document.getElementById('cus-cpf').value.replace(/\D/g, '') }
+                email: userEmail,
+                firstName: userName,
+                lastName: userSurname,
+                identification: { type: 'CPF', number: userCPF }
             },
         },
         customization: {
-            paymentMethods: { creditCard: "all", ticket: "all", bankTransfer: "all" },
-            visual: { style: { theme: 'default' } }
+            paymentMethods: {
+                creditCard: "all",
+                ticket: "all",
+                bankTransfer: "all",
+                maxInstallments: 12
+            },
+            visual: {
+                style: { theme: 'default' }
+            }
         },
         callbacks: {
-            onReady: () => console.log("Sistema de pagamento pronto."),
+            //onReady é obrigatório
+            onReady: () => {
+                console.log("✅ Mercado Pago Brick carregado com sucesso.");
+            },
+            //onError é obrigatório (estava faltando e causava o erro undefined)
+            onError: (error) => {
+                console.error("❌ Erro no SDK do Mercado Pago:", error);
+                alert("Houve um erro ao carregar os meios de pagamento. Tente recarregar a página.");
+            },
             onSubmit: ({ selectedPaymentMethod, formData }) => {
                 return new Promise((resolve, reject) => {
                     const functionUrl = "https://us-central1-medferpa-store-1cd4d.cloudfunctions.net/processPayment";
@@ -124,77 +184,83 @@ async function initMercadoPagoBrick() {
                     })
                     .then(response => response.json())
                     .then(result => {
-                        // LÓGICA DE SUCESSO REAL
+                        // Trata retornos de sucesso ou pendência (Pix/Boleto)
                         if (result.status === "approved") {
                             processOrder(totalCompra, selectedPaymentMethod, "Pagamento Aprovado", resolve);
                         } 
                         else if (result.status === "pending" || result.status === "in_process") {
-                            // Se for Pix ou Boleto, exibe instruções e salva como pendente
                             handlePendingPayment(result, selectedPaymentMethod, resolve);
                         } 
                         else {
-                            alert("Pagamento recusado.");
+                            alert("Pagamento não aprovado. Verifique os dados ou mude o meio de pagamento.");
                             reject();
                         }
                     })
-                    .catch(e => { reject(); });
+                    .catch(error => {
+                        console.error("Erro na API:", error);
+                        alert("Erro de comunicação com o servidor de pagamentos.");
+                        reject();
+                    });
                 });
             }
         },
     };
+
     paymentBrickController = await bricksBuilder.create('payment', 'paymentBrick_container', settings);
 }
 
 /* ============================================================
-   6. TRATAMENTO DE PIX / BOLETO (PENDENTE)
+   7. TRATAMENTO DE PIX / BOLETO (PENDENTE)
    ============================================================ */
 function handlePendingPayment(result, method, resolve) {
     let instructionsHtml = "";
 
-    // Se for PIX
+    // Lógica para PIX (Exibe QR Code)
     if (result.point_of_interaction?.transaction_data?.qr_code) {
         const qrCode = result.point_of_interaction.transaction_data.qr_code;
         const qrCodeBase64 = result.point_of_interaction.transaction_data.qr_code_base64;
 
         instructionsHtml = `
-            <div style="text-align:center; padding: 20px; border: 2px dashed #000; border-radius: 10px; background: #fff;">
-                <h3 style="margin-bottom: 15px;">Pague com Pix</h3>
-                <img src="data:image/png;base64,${qrCodeBase64}" style="width:200px; margin-bottom:15px;">
-                <p style="font-size:12px; color:#666; margin-bottom:10px;">Escaneie o QR Code ou copie a chave abaixo:</p>
-                <textarea readonly style="width:100%; height:60px; font-size:10px; margin-bottom:15px;">${qrCode}</textarea>
-                <button onclick="navigator.clipboard.writeText('${qrCode}').then(() => alert('Copiado!'))" style="background:#000; color:#fff; padding:10px 20px; border:none; border-radius:5px; cursor:pointer;">COPIAR CHAVE PIX</button>
-                <p style="margin-top:20px; font-weight:800; color: #d33;">Atenção: O pedido será aprovado após o pagamento.</p>
+            <div style="text-align:center; padding: 30px; border: 2px dashed #1a73e8; border-radius: 12px; background: #f8faff;">
+                <h3 style="color:#1a73e8; margin-bottom: 20px;">Finalize seu Pix</h3>
+                <img src="data:image/png;base64,${qrCodeBase64}" style="width:220px; border: 10px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom:20px;">
+                <p style="font-size:14px; color:#444; margin-bottom:15px;">Escaneie o código acima no app do seu banco.</p>
+                <textarea readonly style="width:100%; height:70px; padding:10px; border:1px solid #ddd; border-radius:5px; font-size:11px; background:#fff; margin-bottom:15px; resize:none;">${qrCode}</textarea>
+                <button onclick="navigator.clipboard.writeText('${qrCode}').then(() => alert('Copia e Cola copiado!'))" style="width:100%; background:#1a73e8; color:#fff; padding:15px; border:none; border-radius:8px; font-weight:800; cursor:pointer;">COPIAR CÓDIGO PIX</button>
+                <p style="margin-top:20px; font-size:12px; color:#666;">Seu pedido será liberado imediatamente após a confirmação.</p>
             </div>
         `;
     } 
-    // Se for BOLETO
+    // Lógica para BOLETO (Exibe link)
     else if (result.transaction_details?.external_resource_url) {
         const urlBoleto = result.transaction_details.external_resource_url;
         instructionsHtml = `
-            <div style="text-align:center; padding: 20px; border: 2px dashed #000; border-radius: 10px; background: #fff;">
-                <h3>Seu Boleto foi gerado!</h3>
-                <p style="margin: 15px 0;">Clique no botão abaixo para baixar ou pagar o boleto.</p>
-                <a href="${urlBoleto}" target="_blank" style="display:inline-block; background:#000; color:#fff; padding:15px 30px; text-decoration:none; border-radius:5px; font-weight:800;">ABRIR BOLETO</a>
+            <div style="text-align:center; padding: 30px; border: 2px dashed #000; border-radius: 12px; background: #fff;">
+                <h3 style="margin-bottom: 20px;">Boleto Gerado!</h3>
+                <p style="margin-bottom: 25px;">Clique no botão abaixo para acessar o seu boleto bancário.</p>
+                <a href="${urlBoleto}" target="_blank" style="display:block; background:#000; color:#fff; padding:18px; text-decoration:none; border-radius:8px; font-weight:800; text-transform:uppercase;">ABRIR BOLETO BANCÁRIO</a>
             </div>
         `;
     }
 
-    // Substitui o formulário pelas instruções
+    // Injeta as instruções no container do formulário
     document.getElementById('paymentBrick_container').innerHTML = instructionsHtml;
     
-    // Salva no banco como "Aguardando Pagamento"
+    // Salva o pedido no banco como aguardando
     processOrder(totalCompra, method, "Aguardando Pagamento", resolve);
 }
 
 /* ============================================================
-   7. FINALIZAÇÃO DO PEDIDO (BANCO DE DADOS)
+   8. SALVAMENTO DO PEDIDO (FIRESTORE)
    ============================================================ */
 async function processOrder(totalValue, method, statusLabel, resolve) {
     const user = auth.currentUser;
+    const orderNumber = Math.floor(100000 + Math.random() * 900000);
+
     const orderData = {
-        orderNumber: Math.floor(100000 + Math.random() * 900000),
+        orderNumber: orderNumber,
         userId: user ? user.uid : "guest",
-        customerName: document.getElementById('cus-name').value.toUpperCase(),
+        customerName: (document.getElementById('cus-name').value + " " + document.getElementById('cus-surname').value).toUpperCase(),
         customerEmail: document.getElementById('cus-email').value,
         total: totalValue,
         paymentMethod: method,
@@ -212,13 +278,14 @@ async function processOrder(totalValue, method, statusLabel, resolve) {
     try {
         await addDoc(collection(db, "orders"), orderData);
         localStorage.removeItem('medferpa_cart');
-        resolve(); // Fecha o estado de loading do botão
+        resolve(); // Conclui a animação de carregamento do botão do Mercado Pago
         
-        // Se for cartão (aprovado na hora), já redireciona. 
-        // Se for Pix, o usuário verá o QR Code e decidirá quando sair.
+        // Se for cartão (aprovado na hora), redireciona direto
         if (statusLabel === "Pagamento Aprovado") {
-            alert("Pagamento Aprovado com Sucesso!");
+            alert("Pagamento Aprovado! Você será redirecionado.");
             window.location.href = "dashboard.html";
         }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        console.error("Erro ao salvar pedido:", e);
+    }
 }
