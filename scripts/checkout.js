@@ -168,7 +168,6 @@ async function initMercadoPagoBrick() {
             },
             visual: {
                 style: { theme: 'default' },
-                texts: { payButton: 'Finalizar Pagamento' }
             }
         },
         callbacks: {
@@ -217,7 +216,7 @@ async function processOrder(totalValue, method, resolve, reject) {
     const orderData = {
         orderNumber: orderNumber,
         userId: user ? user.uid : "guest",
-        customerName: document.getElementById('cus-name').value + " " + document.getElementById('cus-surname').value,
+        customerName: (document.getElementById('cus-name').value + " " + document.getElementById('cus-surname').value).toUpperCase(),
         customerEmail: document.getElementById('cus-email').value,
         total: totalValue,
         paymentMethod: method,
@@ -230,23 +229,23 @@ async function processOrder(totalValue, method, resolve, reject) {
             numero: document.getElementById('ship-number').value,
             bairro: document.getElementById('ship-bairro').value,
             complemento: document.getElementById('ship-comp').value || "N/A"
-        },
-        timeSlot: localStorage.getItem('medferpa_selected_time') || "Horário Comercial"
+        }
     };
 
     try {
-        await addDoc(collection(db, "orders"), orderData);
+        console.log("Tentando salvar pedido no Firebase...");
+        const docRef = await addDoc(collection(db, "orders"), orderData);
+        console.log("Pedido salvo com ID:", docRef.id);
         
-        // Sucesso total: limpa carrinho e comunica o Mercado Pago
         localStorage.removeItem('medferpa_cart');
-        resolve(); // Aqui o botão de pagamento finaliza a animação com sucesso
+        resolve(); // Finaliza animação do botão
 
-        alert(`Pedido #${orderNumber} realizado com sucesso!`);
+        alert(`Sucesso! Pedido #${orderNumber} realizado.`);
         window.location.href = "dashboard.html?status=success";
 
     } catch (error) {
-        console.error("Erro ao salvar pedido:", error);
-        alert("Erro ao registrar o pedido no banco. O pagamento foi processado, entre em contato com o suporte.");
-        reject(); // Libera o botão do estado de loading mesmo em erro de salvamento
+        console.error("ERRO FIREBASE DETALHADO:", error);
+        alert("O pagamento foi aprovado, mas houve um erro de permissão ao salvar no banco. Verifique as 'Rules' do Firestore.");
+        reject(); 
     }
 }
